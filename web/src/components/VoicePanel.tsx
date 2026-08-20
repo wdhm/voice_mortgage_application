@@ -48,6 +48,12 @@ export function VoicePanel() {
         action are gated server-side — the model can only ask.
       </p>
 
+      {v.conn === "reconnecting" && (
+        <div className="reconnecting" role="status">
+          <span className="consent-dot" /> Reconnecting to the voice channel…
+        </div>
+      )}
+
       {v.session === "idle" ? (
         <button className="icon-btn primary" onClick={() => v.send({ type: "start" })}>
           Start voice conversation

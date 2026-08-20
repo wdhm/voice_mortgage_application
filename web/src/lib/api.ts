@@ -178,3 +178,73 @@ export async function voiceApproveDigitalD(): Promise<void> {
 export async function voiceStop(): Promise<void> {
   await fetch("/api/voice/stop", { method: "POST" });
 }
+
+// ---- Case / advisor summary (Screen 3) --------------------------------- //
+
+export type IdentityStatus = "unidentified" | "identifying" | "identified" | "failed";
+export type CardStatus = "active" | "blocked" | "replacement_ordered";
+
+export interface CapacityMetrics {
+  requested_mortgage: number;
+  ltv_pct: number;
+  total_debt: number;
+  annual_gross_income: number;
+  debt_ratio: number;
+  total_amort_monthly: number;
+  stressed_net_interest_monthly: number;
+  living_cost_monthly: number;
+  property_running_cost_monthly: number;
+  existing_debt_payment_monthly: number;
+  total_monthly_costs: number;
+  kalp_surplus_monthly: number;
+  [k: string]: number;
+}
+
+export interface AdvisorSummarySections {
+  identity?: { customer?: string; assurance?: string };
+  income_provenance?: {
+    employer?: string;
+    gross_monthly?: number;
+    net_monthly?: number;
+    provenance?: string;
+  };
+  requested_loan?: Record<string, unknown>;
+  credit_result?: Record<string, unknown>;
+  capacity_metrics?: CapacityMetrics;
+  customer_preferences?: Record<string, unknown>;
+  risks_caveats?: string[];
+  meeting?: Record<string, unknown> | null;
+}
+
+export interface AdvisorSummary {
+  sections: AdvisorSummarySections;
+  final_decision_required: boolean;
+  status_text: string;
+  decision_text: string;
+  updated_at: string;
+}
+
+export interface CaseCard {
+  card_id: string;
+  card_type: string;
+  last_four: string;
+  status: CardStatus;
+}
+
+export interface DemoCaseView {
+  identity_status: IdentityStatus;
+  customer_profile: { display_name: string; existing_products?: string[] } & Record<string, unknown>;
+  credit_result: { score?: number; band?: string } & Record<string, unknown> | null;
+  booked_meeting:
+    | { slot: { slot_id: string; start: string; advisor: string }; booking_reference: string; purpose: string }
+    | null;
+  cards: CaseCard[];
+  replacement_order: { order_reference: string; delivery_estimate: string; reason: string } | null;
+  advisor_summary: AdvisorSummary | null;
+  outcome: string;
+}
+
+export async function getCase(): Promise<DemoCaseView> {
+  const r = await fetch("/api/case");
+  return r.json();
+}

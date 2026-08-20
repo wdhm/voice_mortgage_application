@@ -130,6 +130,29 @@ async def test_card_block_gate_blocks_without_consent():
     assert h.repo.get().replacement_order is None
 
 
+async def test_advisor_summary_contract_for_screen3(h):
+    """Screen 3 reads advisor_summary.sections — lock its shape + never 'approved'."""
+    await h.run_to_completion()
+    s = h.repo.get().advisor_summary
+    assert s is not None
+    assert s.final_decision_required is True
+    assert "approv" not in s.status_text.lower()
+    assert "approv" not in s.decision_text.lower()
+    assert s.status_text == "Preliminary assessment: looks supportable"
+    for key in (
+        "identity",
+        "income_provenance",
+        "requested_loan",
+        "credit_result",
+        "capacity_metrics",
+        "risks_caveats",
+        "meeting",
+    ):
+        assert key in s.sections, key
+    assert s.sections["capacity_metrics"]["kalp_surplus_monthly"] == 5138
+    assert s.sections["income_provenance"]["net_monthly"] == 62400
+
+
 async def test_identity_required_before_profile():
     h = VoiceHarness()
     h._all = []
