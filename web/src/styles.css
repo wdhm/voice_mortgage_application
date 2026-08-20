@@ -1,0 +1,294 @@
+:root {
+  /* Visual tokens (docs/ux-design.md) */
+  --ink: #172126;
+  --canvas: #f4f6f5;
+  --surface: #ffffff;
+  --alfa-red: #c9343a;
+  --verified-teal: #087f78;
+  --review-amber: #b7791f;
+  --danger: #b42318;
+  --border: #d5dcda;
+
+  --ink-soft: #52605f;
+  --ink-faint: #7d8a89;
+  --radius: 8px;
+
+  --font-sans: "Space Grotesk", "Segoe UI", sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- App shell -------------------------------------------------------- */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---- Header ----------------------------------------------------------- */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 60px;
+  flex: 0 0 60px;
+  padding: 0 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 19px;
+}
+.brand .mark {
+  color: var(--alfa-red);
+}
+.brand .sep {
+  color: var(--border);
+  font-weight: 400;
+}
+.brand .case {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.header-spacer {
+  flex: 1;
+}
+
+.conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.conn .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+}
+.conn.ready .dot {
+  background: var(--verified-teal);
+}
+.conn.connecting .dot {
+  background: var(--review-amber);
+}
+.conn.failed .dot {
+  background: var(--danger);
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.icon-btn:hover {
+  border-color: var(--ink-faint);
+}
+
+/* ---- Main split ------------------------------------------------------- */
+.split {
+  display: grid;
+  grid-template-columns: 62fr 38fr;
+  flex: 1;
+  min-height: 0;
+}
+
+.pane {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px;
+}
+.pane.journey {
+  border-right: 1px solid var(--border);
+}
+.pane.hood {
+  background: #eef1f0;
+}
+
+.pane-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 16px;
+}
+
+/* ---- Step nav --------------------------------------------------------- */
+.steps {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.step .num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--canvas);
+  color: var(--ink-soft);
+}
+.step.active {
+  border-color: var(--alfa-red);
+  color: var(--ink);
+}
+.step.active .num {
+  background: var(--alfa-red);
+  color: #fff;
+}
+
+/* ---- Placeholder card ------------------------------------------------- */
+.placeholder {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--ink-faint);
+}
+.placeholder h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+/* ---- Timeline --------------------------------------------------------- */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.timeline-empty {
+  color: var(--ink-faint);
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+.row .status-icon {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+}
+.row.completed .status-icon,
+.row.granted .status-icon {
+  background: var(--verified-teal);
+}
+.row.running .status-icon {
+  background: var(--review-amber);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+.row.review .status-icon,
+.row.required .status-icon {
+  background: var(--review-amber);
+}
+.row.blocked .status-icon,
+.row.failed .status-icon,
+.row.denied .status-icon {
+  background: var(--danger);
+}
+
+.row .label {
+  font-size: 13px;
+  min-width: 0;
+}
+.row .label .op {
+  color: var(--ink);
+}
+.row .label .svc {
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+.row .meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.row .state {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--ink-soft);
+}
+.row .time {
+  font-size: 10px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row.running .status-icon {
+    animation: none;
+  }
+}
