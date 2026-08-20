@@ -1,8 +1,9 @@
 import { StepNav } from "./components/StepNav";
 import { Header } from "./components/Header";
 import { UnderTheHood } from "./components/UnderTheHood";
+import { DocumentPanel } from "./components/DocumentPanel";
 import { useEventStream } from "./lib/useEventStream";
-import { emitEcho, resetDemo } from "./lib/api";
+import { resetDemo } from "./lib/api";
 
 export default function App() {
   const { events, conn } = useEventStream();
@@ -18,17 +19,7 @@ export default function App() {
         <section className="pane journey">
           <p className="pane-title">Customer journey</p>
           <StepNav active={1} />
-          <div className="placeholder">
-            <h2>Bank Alfa mortgage journey</h2>
-            <p>The income document, voice application, and advisor summary appear here.</p>
-            <button
-              className="icon-btn"
-              style={{ marginTop: 16 }}
-              onClick={() => emitEcho("Smoke test event")}
-            >
-              Emit test event
-            </button>
-          </div>
+          <DocumentPanel onContinue={() => { /* M4: advance to voice step */ }} />
         </section>
         <UnderTheHood events={events} />
       </main>

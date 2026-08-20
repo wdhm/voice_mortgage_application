@@ -1,0 +1,94 @@
+"""Two bundled fake Swedish payslips (Lönespecifikation), rendered as self-contained
+HTML previews. All data is fictional; no real personal data. The high-confidence
+sample is crisp; the low-confidence sample is visibly degraded (smudged net pay and
+employment type) to justify the human-review path.
+"""
+from __future__ import annotations
+
+SAMPLES = [
+    {
+        "key": "high_confidence",
+        "label": "High-confidence payslip",
+        "description": "Crisp digital payslip — extracts straight through.",
+        "filename": "lonespec-northstar-hifi.html",
+    },
+    {
+        "key": "low_confidence",
+        "label": "Low-confidence payslip",
+        "description": "Degraded scan — routes to human review.",
+        "filename": "lonespec-northstar-scan.html",
+    },
+]
+
+SAMPLE_KEYS = {s["key"] for s in SAMPLES}
+
+_BASE_CSS = """
+:root{--ink:#172126;--muted:#5b6b6a;--line:#D5DCDA;--red:#C9343A;--paper:#fff;}
+*{box-sizing:border-box}
+body{margin:0;background:#eceeed;font-family:'Space Grotesk',system-ui,sans-serif;color:var(--ink);}
+.sheet{max-width:640px;margin:20px auto;background:var(--paper);padding:34px 40px 40px;
+  box-shadow:0 1px 0 var(--line),0 12px 30px rgba(23,33,38,.08);}
+.top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--ink);padding-bottom:14px;}
+.brand{font-weight:700;font-size:20px;letter-spacing:.02em}
+.brand small{display:block;font-weight:500;color:var(--muted);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.doc{ text-align:right;font-size:12px;color:var(--muted)}
+h1{font-family:'Fraunces',Georgia,serif;font-size:22px;margin:22px 0 4px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px;font-size:13px}
+.row{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:7px 0}
+.row .k{color:var(--muted)}
+.row .v{font-weight:600;font-variant-numeric:tabular-nums}
+.totals{margin-top:22px;border-top:2px solid var(--ink);padding-top:12px}
+.totals .row{border:none;padding:5px 0}
+.net{font-size:17px}
+.net .v{color:var(--red)}
+.foot{margin-top:26px;color:var(--muted);font-size:11px;line-height:1.5}
+.smudge{filter:blur(1.1px);opacity:.72;letter-spacing:.4px}
+.scan{background:linear-gradient(102deg,#fdfdfb,#f3f1ea);}
+.scan .sheet{transform:rotate(-.5deg)}
+.scan .sheet:after{content:"";position:absolute}
+"""
+
+
+def _payslip(*, net_html: str, emp_html: str, degraded: bool) -> str:
+    body_class = "scan" if degraded else ""
+    note = (
+        "Skannad kopia — vissa fält kan vara svårlästa."
+        if degraded
+        else "Digital lönespecifikation genererad av Northstar AB lönesystem."
+    )
+    return f"""<!doctype html>
+<html lang="sv"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>{_BASE_CSS}</style></head>
+<body class="{body_class}"><div class="sheet" style="position:relative">
+  <div class="top">
+    <div class="brand">Northstar AB<small>Arbetsgivare</small></div>
+    <div class="doc">Org.nr 556677-8899<br>Löneperiod: Augusti 2026<br>Utbetalningsdatum: 2026-08-25</div>
+  </div>
+  <h1>Lönespecifikation</h1>
+  <p class="sub">Emma Lindberg · Anställningsnr 4471 · Täby</p>
+  <div class="grid">
+    <div class="row"><span class="k">Anställningsform</span><span class="v {'smudge' if degraded else ''}">{emp_html}</span></div>
+    <div class="row"><span class="k">Befattning</span><span class="v">Systemutvecklare</span></div>
+    <div class="row"><span class="k">Skattetabell</span><span class="v">31</span></div>
+    <div class="row"><span class="k">Arbetad tid</span><span class="v">168 tim</span></div>
+  </div>
+  <div class="totals">
+    <div class="row"><span class="k">Bruttolön</span><span class="v">96 000 kr</span></div>
+    <div class="row"><span class="k">Preliminär skatt</span><span class="v">−33 600 kr</span></div>
+    <div class="row net"><span class="k">Nettolön (utbetalas)</span><span class="v {'smudge' if degraded else ''}">{net_html}</span></div>
+  </div>
+  <p class="foot">{note}<br>Detta är ett fiktivt dokument för demonstration. Inga verkliga personuppgifter.</p>
+</div></body></html>"""
+
+
+def render_payslip_html(key: str) -> str:
+    if key == "high_confidence":
+        return _payslip(net_html="62 400 kr", emp_html="Tillsvidareanställning", degraded=False)
+    if key == "low_confidence":
+        # Net pay and employment form are smudged/garbled on the scan.
+        return _payslip(net_html="6&#8202;2&nbsp;4&#8203;0&#8202;0 k&#8202;r", emp_html="Tillsvidar⋯ställn.", degraded=True)
+    raise KeyError(f"unknown sample {key}")

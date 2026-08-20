@@ -5,6 +5,10 @@ document flows all operate on the same case and timeline.
 """
 from __future__ import annotations
 
+from .config import settings
+from .documents.port import DocumentAnalyzer
+from .documents.service import DocumentService
+from .documents.simulated import SimulatedDocumentAnalyzer
 from .domain.consent import ConsentEngine
 from .domain.fixtures import CASE_ID
 from .domain.repository import InMemoryCaseRepository
@@ -15,6 +19,14 @@ from .tools.dispatcher import ToolDispatcher
 SESSION_ID = "session-demo"
 
 
+def _make_analyzer() -> DocumentAnalyzer:
+    if settings.document_provider == "foundry":
+        from .documents.foundry import FoundryDocumentAnalyzer
+
+        return FoundryDocumentAnalyzer()
+    return SimulatedDocumentAnalyzer()
+
+
 class AppState:
     def __init__(self) -> None:
         self.repo = InMemoryCaseRepository(session_id=SESSION_ID)
@@ -22,6 +34,7 @@ class AppState:
         self.bus.set_epoch(self.repo.epoch)
         self.consent = ConsentEngine()
         self.tools = ToolDispatcher(self.repo, self.bus, self.consent)
+        self.documents = DocumentService(self.repo, self.bus, _make_analyzer())
 
     async def reset(self) -> None:
         """Reset the case (new epoch) and clear the timeline, then emit a reset event."""

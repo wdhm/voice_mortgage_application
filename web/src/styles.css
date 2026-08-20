@@ -292,3 +292,227 @@ body {
     animation: none;
   }
 }
+
+/* ---- Document panel (Screen 1) --------------------------------------- */
+.doc-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.doc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.doc-head h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 20px;
+  margin: 0;
+}
+.mode {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--ink-soft);
+  background: var(--surface);
+}
+.mode.foundry {
+  color: var(--verified-teal);
+  border-color: var(--verified-teal);
+}
+.doc-sub {
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin: 4px 0 16px;
+}
+.doc-error {
+  background: #fdecec;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.doc-intake {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.samples {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sample-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font: inherit;
+}
+.sample-card:hover:not(:disabled) {
+  border-color: var(--alfa-red);
+}
+.sample-card strong {
+  font-size: 14px;
+}
+.sample-card span {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+.upload {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.doc-analyzing {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 0;
+}
+.doc-analyzing p {
+  color: var(--ink-faint);
+  font-size: 13px;
+}
+.skeleton {
+  height: 16px;
+  border-radius: 4px;
+  background: var(--border);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+.skeleton.short {
+  width: 55%;
+}
+
+.doc-review {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+@media (min-width: 900px) {
+  .doc-review {
+    grid-template-columns: 1.15fr 0.85fr;
+  }
+}
+.review-banner,
+.accept-banner {
+  font-size: 13px;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+.review-banner {
+  background: #fbf2e0;
+  border: 1px solid var(--review-amber);
+  color: var(--review-amber);
+}
+.accept-banner {
+  background: #e5f3f1;
+  border: 1px solid var(--verified-teal);
+  color: var(--verified-teal);
+}
+
+.field-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.field-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.field-table .fname {
+  color: var(--ink-soft);
+  width: 42%;
+}
+.field-table .fval input {
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 7px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.field-table tr.flagged .fval input {
+  border-color: var(--review-amber);
+  background: #fdf8ee;
+}
+.field-table .orig {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin-top: 3px;
+}
+.field-table .fconf {
+  text-align: right;
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.field-table .fconf.ok {
+  color: var(--verified-teal);
+}
+.field-table .fconf.low {
+  color: var(--review-amber);
+}
+
+.review-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.icon-btn.primary {
+  background: var(--alfa-red);
+  border-color: var(--alfa-red);
+  color: #fff;
+}
+.icon-btn.primary:hover {
+  background: #b02d33;
+}
+.icon-btn.continue {
+  margin-top: 16px;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.preview iframe {
+  width: 100%;
+  height: 420px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.doc-terminal {
+  padding: 24px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--ink-faint);
+  font-size: 13px;
+}
+.doc-terminal.error {
+  border-color: var(--danger);
+  color: var(--danger);
+}
