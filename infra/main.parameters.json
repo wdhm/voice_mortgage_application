@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": { "value": "${AZURE_ENV_NAME}" },
+    "location": { "value": "${AZURE_LOCATION}" },
+    "resourceGroupName": { "value": "${AZURE_RESOURCE_GROUP=rg-voice-mortgage-app}" },
+    "foundryAccountName": { "value": "${FOUNDRY_ACCOUNT_NAME=foundry-mortgage}" },
+    "foundryEndpoint": { "value": "${FOUNDRY_ENDPOINT=https://foundry-mortgage.cognitiveservices.azure.com/}" },
+    "voiceProvider": { "value": "${VOICE_PROVIDER=simulated}" },
+    "documentProvider": { "value": "${DOCUMENT_PROVIDER=simulated}" },
+    "appImage": { "value": "${SERVICE_APP_IMAGE_NAME=mcr.microsoft.com/azuredocs/containerapps-helloworld:latest}" }
+  }
+}
