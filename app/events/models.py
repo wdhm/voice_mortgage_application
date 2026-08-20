@@ -7,9 +7,8 @@ anything emitted before the most recent reset.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -30,7 +29,7 @@ class EventStatus(str, Enum):
 class EventDisplay(BaseModel):
     label: str
     status: EventStatus
-    service: Optional[str] = None  # e.g. "Content Understanding", "Voice Live", "Mock CRM"
+    service: str | None = None  # e.g. "Content Understanding", "Voice Live", "Mock CRM"
 
 
 class Event(BaseModel):
@@ -41,5 +40,5 @@ class Event(BaseModel):
     correlation_id: str
     sequence: int
     epoch: int
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     display: EventDisplay

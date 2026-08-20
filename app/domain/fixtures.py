@@ -6,13 +6,17 @@ and Mastercard ending 4471 is active with no replacement order.
 """
 from __future__ import annotations
 
+from datetime import UTC
+
 from .models import (
+    AcceptedIncome,
     Card,
     CardStatus,
     CustomerProfile,
     DemoCase,
     DocumentState,
     IdentityStatus,
+    Provenance,
 )
 
 # Canonical identifiers kept stable so tools and the UI can reference them.
@@ -46,3 +50,22 @@ def build_canonical_case(session_id: str, epoch: int = 0) -> DemoCase:
             ),
         ],
     )
+
+
+# Canonical accepted-income values Emma's high-confidence payslip yields. The M3
+# document flow will produce this for real; until then tools/tests seed it here
+# so Part 2 (mortgage capacity) is exercisable without the document pipeline.
+def apply_accepted_income_emma(case: DemoCase) -> DemoCase:
+    from datetime import date, datetime
+
+    case.accepted_income = AcceptedIncome(
+        employer_name="Northstar AB",
+        gross_salary_monthly=96_000,
+        net_salary_monthly=62_400,
+        employment_type="permanent",
+        pay_date=date(2026, 8, 25),
+        provenance=Provenance.extracted,
+        accepted_at=datetime.now(UTC),
+    )
+    case.document_state = DocumentState.accepted_automatically
+    return case

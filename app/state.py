@@ -5,10 +5,12 @@ document flows all operate on the same case and timeline.
 """
 from __future__ import annotations
 
+from .domain.consent import ConsentEngine
 from .domain.fixtures import CASE_ID
 from .domain.repository import InMemoryCaseRepository
 from .events.bus import EventBus
 from .events.models import EventStatus
+from .tools.dispatcher import ToolDispatcher
 
 SESSION_ID = "session-demo"
 
@@ -18,6 +20,8 @@ class AppState:
         self.repo = InMemoryCaseRepository(session_id=SESSION_ID)
         self.bus = EventBus(session_id=SESSION_ID, case_id=CASE_ID)
         self.bus.set_epoch(self.repo.epoch)
+        self.consent = ConsentEngine()
+        self.tools = ToolDispatcher(self.repo, self.bus, self.consent)
 
     async def reset(self) -> None:
         """Reset the case (new epoch) and clear the timeline, then emit a reset event."""

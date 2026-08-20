@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -69,21 +68,21 @@ class CardStatus(str, Enum):
 class CustomerProfile(BaseModel):
     customer_id: str
     display_name: str
-    employer_name: Optional[str] = None
-    relationship_summary: Optional[str] = None
-    existing_car_loan_balance: Optional[int] = None  # SEK
-    existing_car_loan_payment: Optional[int] = None  # SEK / month
+    employer_name: str | None = None
+    relationship_summary: str | None = None
+    existing_car_loan_balance: int | None = None  # SEK
+    existing_car_loan_payment: int | None = None  # SEK / month
 
 
 class IncomeField(BaseModel):
     """One extracted field with value, confidence and provenance."""
     name: str
-    value: Optional[str] = None
-    normalized_value: Optional[float | str] = None
-    confidence: Optional[float] = None
+    value: str | None = None
+    normalized_value: float | str | None = None
+    confidence: float | None = None
     provenance: Provenance = Provenance.extracted
-    source_grounding: Optional[str] = None
-    original_value: Optional[str] = None  # retained when a human edits it
+    source_grounding: str | None = None
+    original_value: str | None = None  # retained when a human edits it
 
 
 class ExtractedIncome(BaseModel):
@@ -107,22 +106,22 @@ class AcceptedIncome(BaseModel):
 class ReviewRecord(BaseModel):
     reviewer: str = "demo-reviewer"
     edited_fields: list[str] = Field(default_factory=list)
-    decision: Optional[str] = None  # approved | rejected
-    resolved_at: Optional[datetime] = None
+    decision: str | None = None  # approved | rejected
+    resolved_at: datetime | None = None
 
 
 class UploadedDocument(BaseModel):
     filename: str
     content_type: str
     size_bytes: int
-    sample_key: Optional[str] = None  # "high_confidence" | "low_confidence" | None
+    sample_key: str | None = None  # "high_confidence" | "low_confidence" | None
     uploaded_at: datetime
 
 
 class PropertyRequest(BaseModel):
     location: str
     purchase_price: int
-    deposit: Optional[int] = None
+    deposit: int | None = None
 
 
 class CreditResult(BaseModel):
@@ -139,13 +138,13 @@ class CreditResult(BaseModel):
 class ConsentRecord(BaseModel):
     consent_id: str
     session_id: str
-    customer_id: Optional[str] = None
+    customer_id: str | None = None
     action: ConsentAction
-    resource_scope: Optional[str] = None  # e.g. card id for block_card
+    resource_scope: str | None = None  # e.g. card id for block_card
     status: ConsentStatus = ConsentStatus.requested
-    final_user_transcript: Optional[str] = None
+    final_user_transcript: str | None = None
     requested_at: datetime
-    resolved_at: Optional[datetime] = None
+    resolved_at: datetime | None = None
 
 
 class CapacityResult(BaseModel):
@@ -206,22 +205,22 @@ class DemoCase(BaseModel):
     customer_profile: CustomerProfile
     identity_status: IdentityStatus = IdentityStatus.unidentified
 
-    uploaded_document: Optional[UploadedDocument] = None
+    uploaded_document: UploadedDocument | None = None
     document_state: DocumentState = DocumentState.empty
-    extracted_income: Optional[ExtractedIncome] = None
-    accepted_income: Optional[AcceptedIncome] = None
-    review_record: Optional[ReviewRecord] = None
+    extracted_income: ExtractedIncome | None = None
+    accepted_income: AcceptedIncome | None = None
+    review_record: ReviewRecord | None = None
 
-    property_request: Optional[PropertyRequest] = None
-    credit_result: Optional[CreditResult] = None
+    property_request: PropertyRequest | None = None
+    credit_result: CreditResult | None = None
     consent_records: list[ConsentRecord] = Field(default_factory=list)
-    capacity_result: Optional[CapacityResult] = None
-    advisor_summary: Optional[AdvisorSummary] = None
+    capacity_result: CapacityResult | None = None
+    advisor_summary: AdvisorSummary | None = None
 
     offered_meeting_slots: list[MeetingSlot] = Field(default_factory=list)
-    booked_meeting: Optional[BookedMeeting] = None
+    booked_meeting: BookedMeeting | None = None
 
     cards: list[Card] = Field(default_factory=list)
-    replacement_order: Optional[ReplacementOrder] = None
+    replacement_order: ReplacementOrder | None = None
 
     outcome: CaseOutcome = CaseOutcome.open

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from typing import Optional
 
 from .models import Event, EventDisplay, EventStatus
 
@@ -36,8 +35,8 @@ class EventBus:
         event_type: str,
         label: str,
         status: EventStatus,
-        service: Optional[str] = None,
-        correlation_id: Optional[str] = None,
+        service: str | None = None,
+        correlation_id: str | None = None,
     ) -> Event:
         self._sequence += 1
         event = Event(
