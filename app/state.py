@@ -15,6 +15,7 @@ from .domain.repository import InMemoryCaseRepository
 from .events.bus import EventBus
 from .events.models import EventStatus
 from .tools.dispatcher import ToolDispatcher
+from .voice.host import VoiceOrchestrator
 
 SESSION_ID = "session-demo"
 
@@ -35,9 +36,11 @@ class AppState:
         self.consent = ConsentEngine()
         self.tools = ToolDispatcher(self.repo, self.bus, self.consent)
         self.documents = DocumentService(self.repo, self.bus, _make_analyzer())
+        self.voice = VoiceOrchestrator(self.repo, self.bus, self.tools, settings.voice_provider)
 
     async def reset(self) -> None:
         """Reset the case (new epoch) and clear the timeline, then emit a reset event."""
+        await self.voice.stop()
         case = self.repo.reset()
         self.bus.reset_history()
         self.bus.set_epoch(case.epoch)

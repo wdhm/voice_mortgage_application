@@ -147,3 +147,34 @@ export async function reviewReject(): Promise<DocumentProjection> {
 
 export const previewUrl = (sampleKey: string) =>
   `/api/documents/sample/${sampleKey}/preview`;
+
+// ---- Voice (Screen 2) -------------------------------------------------- //
+
+export type VoiceMessage =
+  | { type: "hello"; provider: string; epoch: number }
+  | { type: "session"; state: "active" | "idle"; provider: string }
+  | { type: "agent_transcript"; text: string; final: boolean }
+  | { type: "user_transcript"; text: string; final: boolean }
+  | { type: "digitald"; state: "requested" | "approved" }
+  | {
+      type: "consent";
+      status: "requested" | "granted" | "denied" | "consumed" | "expired";
+      action: string;
+      scope: string | null;
+      consent_id: string;
+    }
+  | { type: "barge_in" }
+  | { type: "agent_interrupted" }
+  | { type: "audio"; pcm: string };
+
+export async function voiceStart(): Promise<void> {
+  await fetch("/api/voice/start", { method: "POST" });
+}
+
+export async function voiceApproveDigitalD(): Promise<void> {
+  await fetch("/api/voice/digitald/approve", { method: "POST" });
+}
+
+export async function voiceStop(): Promise<void> {
+  await fetch("/api/voice/stop", { method: "POST" });
+}

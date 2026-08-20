@@ -1,0 +1,139 @@
+"""Voice orchestration: the simulated scripted agent runs the full 20-beat script
+through the governed host, proving consent gates and golden numbers over the same
+path the real Voice Live provider will use.
+"""
+from __future__ import annotations
+
+import pytest
+
+from app.domain.consent import ConsentEngine
+from app.domain.fixtures import CASE_ID
+from app.domain.models import CardStatus, IdentityStatus
+from app.domain.repository import InMemoryCaseRepository
+from app.events.bus import EventBus
+from app.tools.dispatcher import ToolDispatcher
+from app.voice.host import VoiceOrchestrator
+
+
+class VoiceHarness:
+    def __init__(self) -> None:
+        self.repo = InMemoryCaseRepository(session_id="session-test")
+        self.bus = EventBus(session_id="session-test", case_id=CASE_ID)
+        self.bus.set_epoch(self.repo.epoch)
+        self.tools = ToolDispatcher(self.repo, self.bus, ConsentEngine())
+        self.orch = VoiceOrchestrator(self.repo, self.bus, self.tools, "simulated")
+        self.q = self.orch.channel.subscribe()
+
+    def drain(self) -> list[dict]:
+        msgs = []
+        while not self.q.empty():
+            msgs.append(self.q.get_nowait())
+        return msgs
+
+    async def run_to_completion(self, seed_income: bool = True):
+        if seed_income:
+            from app.domain.fixtures import apply_accepted_income_emma
+
+            case = self.repo.get()
+            apply_accepted_income_emma(case)
+            self.repo.set(case)
+        self._all: list[dict] = []
+        await self.orch.start()
+        await self.orch.approve_digitald()
+        beats = [
+            "I want a mortgage pre-approval for a house in Täby, around seven million kronor.",
+            "Yes, you can run the credit check.",
+            "I have one million seven hundred and fifty thousand kronor.",
+            "I'm away for three weeks. Do you have anything after that?",
+            "Monday the 21st of September at 15:00 works.",
+            "One more thing — my card was stolen.",
+            "Yes, block it and order a replacement.",
+        ]
+        for b in beats:
+            await self.orch.user_text(b)
+        self._all = self.drain()
+
+
+@pytest.fixture
+def h() -> VoiceHarness:
+    return VoiceHarness()
+
+
+async def test_full_script_reaches_all_golden_outcomes(h):
+    await h.run_to_completion()
+    case = h.repo.get()
+
+    # Identity + CRM
+    assert case.identity_status is IdentityStatus.identified
+    # Credit check ran (consent granted) with the canonical score.
+    assert case.credit_result is not None and case.credit_result.score == 781
+    # Capacity golden number.
+    assert case.capacity_result is not None
+    assert case.capacity_result.metrics["kalp_surplus_monthly"] == 5138
+    # Advisor summary present and never "approved".
+    assert case.advisor_summary is not None
+    assert "approv" not in case.advisor_summary.status_text.lower()
+    # Meeting booked for the canonical rescheduled slot.
+    assert case.booked_meeting is not None
+    assert case.booked_meeting.slot.slot_id == "slot-2026-09-21-1500"
+    # Card blocked + replacement ordered.
+    assert case.cards[0].status is CardStatus.blocked
+    assert case.replacement_order is not None
+
+    # The agent surfaced a spoken transcript throughout.
+    agent_msgs = [m for m in h._all if m.get("type") == "agent_transcript"]
+    assert len(agent_msgs) >= 7
+    transcript = " ".join(m["text"] for m in agent_msgs).lower()
+    assert "digitald" in transcript
+    assert "goodbye" in transcript
+
+
+async def test_credit_gate_blocks_without_clear_consent():
+    h = VoiceHarness()
+    from app.domain.fixtures import apply_accepted_income_emma
+
+    case = h.repo.get()
+    apply_accepted_income_emma(case)
+    h.repo.set(case)
+    h._all = []
+    await h.orch.start()
+    await h.orch.approve_digitald()
+    await h.orch.user_text("I'd like a mortgage for a house in Täby.")
+    # Ambiguous answer must NOT grant credit-check consent.
+    await h.orch.user_text("Hmm, maybe, I'm not sure.")
+    assert h.repo.get().credit_result is None  # gate held
+
+
+async def test_card_block_gate_blocks_without_consent():
+    h = VoiceHarness()
+    from app.domain.fixtures import apply_accepted_income_emma
+
+    case = h.repo.get()
+    apply_accepted_income_emma(case)
+    h.repo.set(case)
+    h._all = []
+    await h.orch.start()
+    await h.orch.approve_digitald()
+    # Drive to the card topic.
+    for b in [
+        "Mortgage for Täby please.",
+        "Yes, run the credit check.",
+        "1,750,000 kronor.",
+        "Anything after three weeks away?",
+        "The 21st of September at 15:00.",
+        "My card was stolen.",
+    ]:
+        await h.orch.user_text(b)
+    # Decline the block.
+    await h.orch.user_text("No, don't block it.")
+    assert h.repo.get().cards[0].status is CardStatus.active  # gate held
+    assert h.repo.get().replacement_order is None
+
+
+async def test_identity_required_before_profile():
+    h = VoiceHarness()
+    h._all = []
+    await h.orch.start()
+    # Without DigitalD approval, the identify tool has no token → stays unidentified.
+    await h.orch.user_text("Can you tell me my account details?")
+    assert h.repo.get().identity_status is IdentityStatus.unidentified
