@@ -1,0 +1,11 @@
+.copilot-azure/
+.env
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+.venv/
+htmlcov/
+web/dist/
+web/node_modules/
+coverage/

@@ -1,0 +1,1 @@
+"""Role-filtered realtime event delivery."""

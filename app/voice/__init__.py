@@ -1,0 +1,1 @@
+"""Voice Live adapter boundary."""

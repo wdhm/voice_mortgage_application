@@ -1,0 +1,1 @@
+"""Typed domain state for the deterministic demo."""

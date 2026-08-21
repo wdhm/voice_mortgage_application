@@ -1,0 +1,87 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "bank-alfa-dev-39c7"
+    },
+    "location": {
+      "value": "swedencentral"
+    },
+    "sessionId": {
+      "value": "39c70e04-2401-4383-afef-e5e8b89e37bc"
+    },
+    "deployedBy": {
+      "value": "Louise Landin"
+    },
+    "createdAt": {
+      "value": "2026-08-20T10:48:07.8939639+02:00"
+    },
+    "deployerObjectId": {
+      "value": "ab7a9d90-1090-4c6d-814a-8ecd8e890331"
+    },
+    "resourceGroupName": {
+      "value": "rg-voice-mortgage-app"
+    },
+    "containerAppsEnvironmentName": {
+      "value": "cae-bank-alfa-dev-39c7"
+    },
+    "containerAppName": {
+      "value": "ca-bank-alfa-dev-39c7"
+    },
+    "containerRegistryName": {
+      "value": "crbankalfadev39c7"
+    },
+    "logAnalyticsName": {
+      "value": "log-bank-alfa-dev-39c7"
+    },
+    "applicationInsightsName": {
+      "value": "appi-bank-alfa-dev-39c7"
+    },
+    "managedIdentityName": {
+      "value": "id-bank-alfa-dev-39c7"
+    },
+    "keyVaultName": {
+      "value": "kv-bank-alfa-dev-39c7"
+    },
+    "foundryAccountName": {
+      "value": "foundry-mortgage"
+    },
+    "foundryProjectName": {
+      "value": "proj-default"
+    },
+    "appPort": {
+      "value": 8000
+    },
+    "healthEndpoint": {
+      "value": "/healthz"
+    },
+    "appEnvironment": {
+      "value": "azure"
+    },
+    "foundryAccountEndpoint": {
+      "value": "https://foundry-mortgage.services.ai.azure.com/"
+    },
+    "foundryProjectEndpoint": {
+      "value": "https://foundry-mortgage.services.ai.azure.com/api/projects/proj-default"
+    },
+    "azureOpenAIEndpoint": {
+      "value": "https://foundry-mortgage.openai.azure.com"
+    },
+    "azureOpenAIModel": {
+      "value": "gpt-5.2"
+    },
+    "voiceLiveModel": {
+      "value": "gpt-realtime-1.5"
+    },
+    "voiceLiveApiVersion": {
+      "value": "2026-04-10"
+    },
+    "voiceLiveVoice": {
+      "value": "en-US-Ava:DragonHDLatestNeural"
+    },
+    "contentUnderstandingAnalyzerId": {
+      "value": "mortgage_payslip"
+    }
+  }
+}

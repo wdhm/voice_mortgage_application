@@ -1,0 +1,1 @@
+"""Bank Alfa demo tests."""

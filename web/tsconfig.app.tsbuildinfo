@@ -1,0 +1,1 @@
+{"root":["./src/api.ts","./src/main.tsx","./src/types.ts","./src/documents/samplepayslip.ts","./src/routes/customerapp.tsx","./src/routes/serviceapp.tsx","./src/test/pcm.test.ts","./src/test/routes.test.tsx","./src/test/setup.ts","./src/voice/pcm.ts","./src/voice/usevoicelive.ts"],"version":"5.9.3"}

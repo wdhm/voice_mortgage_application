@@ -1,0 +1,1 @@
+"""Bank Alfa voice mortgage demo application."""
