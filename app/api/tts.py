@@ -19,6 +19,7 @@ router = APIRouter()
 class TTSRequest(BaseModel):
     text: str = Field(min_length=1, max_length=2000)
     voice: str | None = None
+    lead: bool = False
 
 
 @router.post("/api/tts")
@@ -27,7 +28,7 @@ async def synthesize_speech(req: TTSRequest) -> Response:
     if tts is None:
         raise HTTPException(status_code=503, detail="tts provider disabled")
     try:
-        audio = await tts.synthesize(req.text, req.voice)
+        audio = await tts.synthesize(req.text, req.voice, req.lead)
     except TTSError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     return Response(

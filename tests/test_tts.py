@@ -13,10 +13,10 @@ class FakeTTS:
     provider = "fake"
 
     def __init__(self) -> None:
-        self.calls: list[tuple[str, str | None]] = []
+        self.calls: list[tuple[str, str | None, bool]] = []
 
-    async def synthesize(self, text: str, voice: str | None = None) -> bytes:
-        self.calls.append((text, voice))
+    async def synthesize(self, text: str, voice: str | None = None, lead: bool = False) -> bytes:
+        self.calls.append((text, voice, lead))
         return b"ID3-fake-mp3-bytes"
 
 
@@ -38,7 +38,7 @@ def test_tts_synthesizes_audio(client, monkeypatch):
     assert resp.status_code == 200
     assert resp.headers["content-type"] == "audio/mpeg"
     assert resp.content == b"ID3-fake-mp3-bytes"
-    assert fake.calls == [("Thank you, Emma.", None)]
+    assert fake.calls == [("Thank you, Emma.", None, False)]
 
 
 def test_tts_rejects_empty_text(client, monkeypatch):

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { VoiceStreamState } from "../lib/useVoice";
-import { isSpeechEnabled, setSpeechEnabled } from "../lib/speech";
+import { isSpeechEnabled, primeAudio, setSpeechEnabled } from "../lib/speech";
 
 const ACTION_LABELS: Record<string, string> = {
   credit_check: "run a credit check (UC)",
@@ -60,7 +60,10 @@ export function VoicePanel({ v }: { v: VoiceStreamState }) {
         <button
           type="button"
           className="mic"
-          onClick={() => v.send({ type: active ? "stop" : "start" })}
+          onClick={() => {
+            if (!active) primeAudio();
+            v.send({ type: active ? "stop" : "start" });
+          }}
           title={active ? "End the voice conversation" : "Start the voice conversation"}
         >
           <span className="mic-glyph" aria-hidden>
@@ -68,9 +71,9 @@ export function VoicePanel({ v }: { v: VoiceStreamState }) {
           </span>
           <span className="mic-ring" aria-hidden />
         </button>
-        <span className="mic-label">
-          {listening ? "Listening…" : active ? "Connecting…" : "Start voice conversation"}
-        </span>
+        {active && (
+          <span className="mic-label">{listening ? "Listening…" : "Connecting…"}</span>
+        )}
         {active && (
           <button className="mic-end" type="button" onClick={() => v.send({ type: "stop" })}>
             End conversation

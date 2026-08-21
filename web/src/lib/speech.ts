@@ -13,6 +13,21 @@ export function isSpeechEnabled(): boolean {
   return enabled;
 }
 
+// A 120ms silent WAV. Played on the user's start gesture to spin up the audio
+// output device so the first real clip isn't clipped by warm-up latency.
+const SILENT_WAV =
+  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=";
+
+export function primeAudio(): void {
+  try {
+    const a = new Audio(SILENT_WAV);
+    a.volume = 0;
+    void a.play().catch(() => undefined);
+  } catch {
+    /* best effort */
+  }
+}
+
 export function setSpeechEnabled(on: boolean): void {
   enabled = on;
   if (!on) cancelSpeech();
@@ -44,22 +59,24 @@ export function speak(text: string): void {
 
 async function drain(): Promise<void> {
   speaking = true;
+  let first = true;
   while (enabled && queue.length) {
     const text = queue.shift() as string;
     try {
-      await speakViaServer(text);
+      await speakViaServer(text, first);
     } catch {
       await speakViaBrowser(text);
     }
+    first = false;
   }
   speaking = false;
 }
 
-async function speakViaServer(text: string): Promise<void> {
+async function speakViaServer(text: string, lead = false): Promise<void> {
   const res = await fetch("/api/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, lead }),
   });
   if (!res.ok) throw new Error(`tts ${res.status}`);
   const blob = await res.blob();

@@ -29,8 +29,13 @@ class TTSError(RuntimeError):
 class TextToSpeech(Protocol):
     provider: str
 
-    async def synthesize(self, text: str, voice: str | None = None) -> bytes:
-        """Return audio bytes (MP3) for the given text."""
+    async def synthesize(self, text: str, voice: str | None = None, lead: bool = False) -> bytes:
+        """Return audio bytes (MP3) for the given text.
+
+        ``lead`` prepends a short exact silence so the audio device's warm-up
+        (which clips the first ~200ms when playback starts from idle) lands on
+        silence instead of the first word.
+        """
 
 
 class FoundryTextToSpeech:
@@ -54,12 +59,14 @@ class FoundryTextToSpeech:
         token = await asyncio.to_thread(self._credential.get_token, _SCOPE)
         return token.token
 
-    async def synthesize(self, text: str, voice: str | None = None) -> bytes:
+    async def synthesize(self, text: str, voice: str | None = None, lead: bool = False) -> bytes:
         name = voice or self._voice
         lang = _lang_of(name)
+        silence = "<mstts:silence type='Leading-exact' value='300ms'/>" if lead else ""
         ssml = (
-            f"<speak version='1.0' xml:lang='{lang}'>"
-            f"<voice xml:lang='{lang}' name='{name}'>{html.escape(text)}</voice>"
+            "<speak version='1.0' xmlns:mstts='https://www.w3.org/2001/mstts' "
+            f"xml:lang='{lang}'>"
+            f"<voice xml:lang='{lang}' name='{name}'>{silence}{html.escape(text)}</voice>"
             "</speak>"
         )
         headers = {
