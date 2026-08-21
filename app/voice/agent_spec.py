@@ -11,10 +11,14 @@ friendly turns suitable for voice. This is a preliminary, illustrative demo — 
 systems are mocked and an advisor always owns the final lending decision.
 
 Rules you must always follow:
-- Begin by asking the customer to approve the DigitalD identification request on screen. \
-Do not reveal any profile or account details until identification is confirmed.
-- After identification, call get_crm_profile to greet her by name and acknowledge her \
-existing relationship.
+- The caller is the known demo customer Emma Lindberg. The server has already loaded her \
+safe banking profile for this call. Greet her by name and ask how you can help.
+- When she asks to block a card, ask for the last four digits before retrieving her cards. \
+Call get_customer_cards, match those digits exactly, and never guess or reveal another card.
+- After matching the card, ask whether it was lost, stolen, or needs blocking for another reason. \
+Store "other" for any reason that is neither lost nor stolen.
+- Repeat the matched card's last four digits and the reason, then call request_customer_consent \
+with action "block_card" and that card_id. Ask for a clear final confirmation before blocking it.
 - Her income has already been verified from her payslip and is in the case. Never ask \
 her to state her salary again; reuse it.
 - Ask only for information that is still missing (for a mortgage, that is the deposit).
@@ -23,7 +27,7 @@ action "credit_check" and ask her plainly for permission. Only call run_credit_c
 after she has clearly agreed. If she is unclear, ask again; if she declines, do not run it.
 - Before blocking a card you MUST first call request_customer_consent with action \
 "block_card" and the card_id, and ask her to confirm that exact card. Only call \
-block_card_and_order_replacement after she clearly confirms.
+block_card_and_order_replacement after she clearly confirms. Pass the previously stated reason.
 - Explain mortgage figures as preliminary and illustrative. Never say or imply the \
 mortgage is finally approved; an advisor decides.
 - Handle both the mortgage request and, if she raises it, a stolen-card block in the \
@@ -36,16 +40,6 @@ latest words."""
 # JSON-schema parameter blocks. The host injects approval_token / consent_id / scope,
 # so those are intentionally NOT model-supplied inputs.
 TOOL_SCHEMAS: list[dict] = [
-    {
-        "name": "identify_customer_with_digitald",
-        "description": "Complete the DigitalD identification handoff once the presenter approves the on-screen modal. Call this after asking her to approve.",
-        "parameters": {"type": "object", "properties": {}, "required": []},
-    },
-    {
-        "name": "get_crm_profile",
-        "description": "Retrieve the identified customer's profile and existing products. Only works after identification.",
-        "parameters": {"type": "object", "properties": {}, "required": []},
-    },
     {
         "name": "request_customer_consent",
         "description": "Open an explicit consent request before a protected action. Use action 'credit_check' before a credit check, or 'block_card' with the card_id before blocking a card. After calling this, ask the customer plainly for permission.",
@@ -107,7 +101,7 @@ TOOL_SCHEMAS: list[dict] = [
     },
     {
         "name": "get_customer_cards",
-        "description": "List the customer's cards (safe descriptors only).",
+        "description": "List the customer's cards (safe descriptors only) so the last four digits stated by the customer can be matched exactly.",
         "parameters": {"type": "object", "properties": {}, "required": []},
     },
     {
@@ -117,9 +111,9 @@ TOOL_SCHEMAS: list[dict] = [
             "type": "object",
             "properties": {
                 "card_id": {"type": "string"},
-                "reason": {"type": "string", "enum": ["stolen", "lost", "fraud"]},
+                "reason": {"type": "string", "enum": ["stolen", "lost", "other"]},
             },
-            "required": ["card_id"],
+            "required": ["card_id", "reason"],
         },
     },
 ]

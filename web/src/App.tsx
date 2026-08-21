@@ -6,6 +6,7 @@ import { PresenterBar } from "./components/PresenterBar";
 import { SummaryPanel } from "./components/SummaryPanel";
 import { MortgageChecklist } from "./components/MortgageChecklist";
 import { DecisionTimeline } from "./components/DecisionTimeline";
+import { PhoneButton } from "./components/PhoneButton";
 import {
   BankingOverview,
   CardsView,
@@ -54,7 +55,7 @@ export default function App() {
       return;
     }
     for (let i = spokenRef.current; i < v.transcript.length; i++) {
-      if (v.transcript[i].who === "agent") speak(v.transcript[i].text);
+      if (v.transcript[i].who === "agent" && v.provider !== "foundry") speak(v.transcript[i].text);
     }
     spokenRef.current = v.transcript.length;
   }, [v.transcript]);
@@ -66,6 +67,13 @@ export default function App() {
   useEffect(() => {
     if (summaryReady && step === 2) setStep(3);
   }, [summaryReady, step]);
+
+  const cardBlocked = events.some(
+    (e) => e.event_type === "tool.completed" && e.display.label === "Block card & order replacement",
+  );
+  useEffect(() => {
+    if (cardBlocked && role === "customer") setCustomerService("cards");
+  }, [cardBlocked, role]);
 
   const selectCustomerService = (service: CustomerService) => {
     setCustomerService(service);
@@ -132,6 +140,7 @@ export default function App() {
       {role === "customer" && customerService === "mortgage" && mortgagePage === "application" && step === 2 && (
         <PresenterBar v={v} />
       )}
+      <PhoneButton voice={v} />
     </div>
   );
 }

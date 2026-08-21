@@ -1,18 +1,17 @@
 """Voice WebSocket: the browser's control + media channel for the conversation.
 
 Outbound: sanitized voice messages (agent/user transcript, audio deltas, session /
-digitald / consent / barge-in control) fanned out from the VoiceOrchestrator's
+consent / barge-in control) fanned out from the VoiceOrchestrator's
 channel. Inbound: presenter + customer control frames routed to the orchestrator.
 
 The orchestrator (not the browser) owns all governance — this route only shuttles
-frames. DigitalD approval is a presenter action; it is accepted both here and via
-the REST endpoint below so either UI control can trigger it.
+frames.
 """
 from __future__ import annotations
 
 import asyncio
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 
 from ..state import app_state
 
@@ -49,8 +48,6 @@ async def _handle_inbound(orch, frame: dict) -> None:
     kind = frame.get("type")
     if kind == "start":
         await orch.start()
-    elif kind == "digitald_approve":
-        await orch.approve_digitald()
     elif kind == "text":
         await orch.user_text(frame.get("text", ""))
     elif kind == "audio":
@@ -65,15 +62,9 @@ async def _handle_inbound(orch, frame: dict) -> None:
 
 @router.post("/api/voice/start")
 async def voice_start() -> dict:
-    await app_state.voice.start()
+    if not await app_state.voice.start():
+        raise HTTPException(status_code=503, detail="Unable to start the configured voice provider.")
     return {"status": "started", "provider": app_state.voice.provider}
-
-
-@router.post("/api/voice/digitald/approve")
-async def voice_digitald_approve() -> dict:
-    """Presenter action: approve the customer's DigitalD identity request."""
-    await app_state.voice.approve_digitald()
-    return {"status": "approved"}
 
 
 @router.post("/api/voice/stop")

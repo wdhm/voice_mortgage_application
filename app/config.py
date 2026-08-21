@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     # Microsoft Foundry (Azure AI Services)
     foundry_endpoint: str = "https://foundry-mortgage.cognitiveservices.azure.com/"
     voicelive_model: str = "gpt-realtime-1.5"
+    voicelive_api_version: str = "2026-07-15"
+    voicelive_voice: str = "en-US-AvaNeural"
 
     # Content Understanding
     cu_api_version: str = "2025-11-01"

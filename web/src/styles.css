@@ -70,6 +70,89 @@ body {
   box-shadow: 0 8px 28px rgba(23, 33, 38, 0.08);
 }
 
+.phone-control {
+  position: fixed;
+  right: max(24px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+.phone-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 50px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--verified-teal);
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(8, 127, 120, 0.32);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.phone-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 13px 32px rgba(8, 127, 120, 0.38);
+}
+.phone-button:focus-visible {
+  outline: 3px solid rgba(8, 127, 120, 0.28);
+  outline-offset: 3px;
+}
+.phone-button.active {
+  background: var(--danger);
+  box-shadow: 0 10px 28px rgba(180, 35, 24, 0.3);
+}
+.phone-button:disabled {
+  background: var(--ink-faint);
+  cursor: wait;
+  opacity: 0.72;
+}
+.phone-button svg {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+}
+.phone-notice {
+  display: flex;
+  width: min(310px, calc(100vw - 48px));
+  flex-direction: column;
+  gap: 7px;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(23, 33, 38, 0.18);
+  font-size: 12px;
+}
+.phone-notice span {
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+.phone-notice button {
+  align-self: flex-start;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--verified-teal);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.phone-notice.error {
+  border-color: #e7aaa5;
+}
+.phone-notice.error strong {
+  color: var(--danger);
+}
+
 /* ---- Header ----------------------------------------------------------- */
 .header {
   display: flex;
@@ -694,7 +777,15 @@ button.checklist-step:hover {
   display: grid;
   grid-template-columns: minmax(280px, 380px) 1fr;
   gap: 28px;
+}
+.card-list {
+  display: grid;
+  gap: 32px;
   margin-top: 28px;
+}
+.cards-layout + .cards-layout {
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
 }
 .bank-card {
   position: relative;
@@ -706,6 +797,9 @@ button.checklist-step:hover {
   background: linear-gradient(135deg, #263e3c, #132321);
   color: #fff;
   box-shadow: 0 14px 30px rgba(23, 33, 38, 0.2);
+}
+.bank-card.debit {
+  background: linear-gradient(135deg, #356d68, #214743);
 }
 .bank-card.blocked {
   filter: grayscale(0.7);

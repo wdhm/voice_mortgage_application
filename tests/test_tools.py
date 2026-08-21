@@ -20,6 +20,9 @@ async def _grant(stack, action, scope=None) -> str:
 
 # ---- guards ------------------------------------------------------------- #
 async def test_crm_blocked_before_identify(stack):
+    case = stack.repo.get()
+    case.identity_status = IdentityStatus.unidentified
+    stack.repo.set(case)
     out = await stack.tools.dispatch("get_crm_profile", {})
     assert not out.ok
     assert "tool.blocked_by_policy" in stack.event_types()
@@ -101,6 +104,7 @@ async def test_full_mortgage_and_card_flow(stack):
     # Part 2: cards + stolen-card block.
     cards = await stack.tools.dispatch("get_customer_cards", {})
     assert cards.ok and cards.result["cards"][0]["last_four"] == "4471"
+    assert cards.result["cards"][1]["last_four"] == "1842"
 
     # Block without consent is refused.
     refused = await stack.tools.dispatch(
@@ -138,7 +142,7 @@ async def test_reset_discards_consent(stack):
     await _identify(stack)
     await _grant(stack, ConsentAction.credit_check)
     await stack.reset()
-    # New epoch/case: identity gone, consent gone.
-    assert stack.repo.get().identity_status is IdentityStatus.unidentified
+    # New epoch/case: known demo identity remains, consent is gone.
+    assert stack.repo.get().identity_status is IdentityStatus.identified
     out = await stack.tools.dispatch("run_credit_check", {})
     assert not out.ok
