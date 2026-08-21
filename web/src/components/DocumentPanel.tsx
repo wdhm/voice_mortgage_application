@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   analyzeSample,
   getDocumentState,
+  getExtractionJson,
   listSamples,
   previewUrl,
   reviewApprove,
@@ -54,6 +55,8 @@ export function DocumentPanel({
   const [busy, setBusy] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [extraction, setExtraction] = useState<Record<string, unknown> | null>(null);
+  const [copied, setCopied] = useState(false);
   const uploadRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -63,6 +66,15 @@ export function DocumentPanel({
   useEffect(() => {
     if (!busy) getDocumentState().then(setDoc).catch(() => {});
   }, [busy, refreshKey]);
+
+  // Advisor-only: keep the structured extraction contract in sync with case state.
+  useEffect(() => {
+    if (role === "advisor" && doc?.fields) {
+      getExtractionJson().then(setExtraction).catch(() => setExtraction(null));
+    } else {
+      setExtraction(null);
+    }
+  }, [role, doc]);
 
   const state = doc?.document_state ?? "empty";
   const sampleKey = doc?.uploaded_document?.sample_key ?? null;
@@ -132,6 +144,32 @@ export function DocumentPanel({
   const accepted = state === "accepted_automatically" || state === "accepted_after_review";
   const fields = doc?.fields ?? null;
   const isAdvisor = role === "advisor";
+
+  const prettyJson = extraction ? JSON.stringify(extraction, null, 2) : "";
+
+  const copyJson = async () => {
+    if (!prettyJson) return;
+    try {
+      await navigator.clipboard.writeText(prettyJson);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  const downloadJson = () => {
+    if (!prettyJson) return;
+    const blob = new Blob([prettyJson], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "income-extraction.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="doc-panel">
@@ -304,6 +342,30 @@ export function DocumentPanel({
                 <button className="icon-btn continue-next" onClick={onContinue}>
                   Continue →
                 </button>
+              </div>
+            )}
+
+            {isAdvisor && extraction && (
+              <div className="extraction-json">
+                <div className="extraction-json-head">
+                  <div>
+                    <p className="pane-title">Structured extraction</p>
+                    <span className="extraction-json-sub">
+                      Reusable JSON contract — normalized values, confidence and analyzer metadata.
+                    </span>
+                  </div>
+                  <div className="extraction-json-actions">
+                    <button type="button" className="icon-btn" onClick={copyJson}>
+                      {copied ? "Copied ✓" : "Copy"}
+                    </button>
+                    <button type="button" className="icon-btn" onClick={downloadJson}>
+                      Download .json
+                    </button>
+                  </div>
+                </div>
+                <pre className="extraction-json-body">
+                  <code>{prettyJson}</code>
+                </pre>
               </div>
             )}
           </div>

@@ -148,6 +148,16 @@ export async function reviewReject(): Promise<DocumentProjection> {
 export const previewUrl = (sampleKey: string) =>
   `/api/documents/sample/${sampleKey}/preview`;
 
+export const extractionJsonUrl = "/api/documents/extraction.json";
+
+// Sanitized, reusable structured extraction contract (advisor download/copy).
+export async function getExtractionJson(): Promise<Record<string, unknown> | null> {
+  const r = await fetch(extractionJsonUrl);
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error("Failed to load structured extraction");
+  return r.json();
+}
+
 // ---- Voice (Screen 2) -------------------------------------------------- //
 
 export type VoiceMessage =

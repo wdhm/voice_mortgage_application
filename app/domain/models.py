@@ -116,6 +116,10 @@ class UploadedDocument(BaseModel):
     size_bytes: int
     sample_key: str | None = None  # "high_confidence" | "low_confidence" | None
     uploaded_at: datetime
+    # Analyzer provenance (for the advisor's structured extraction export).
+    analyzer_provider: str | None = None  # "simulated" | "foundry"
+    analyzer_id: str | None = None
+    analyzer_method: str | None = None
 
 
 class PropertyRequest(BaseModel):

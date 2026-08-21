@@ -1287,6 +1287,50 @@ body {
   font-weight: 600;
 }
 
+/* Advisor structured extraction JSON (reusable contract). */
+.extraction-json {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #edf0ef;
+}
+.extraction-json-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.extraction-json-sub {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 2px;
+}
+.extraction-json-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.extraction-json-body {
+  margin: 0;
+  max-height: 320px;
+  overflow: auto;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #0f1719;
+  color: #d7e2e0;
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre;
+  tab-size: 2;
+}
+.extraction-json-body code {
+  font: inherit;
+  color: inherit;
+}
+
 /* Prominent payslip viewer (right). */
 .preview {
   display: flex;

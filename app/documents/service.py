@@ -156,6 +156,9 @@ class DocumentService:
                 size_bytes=len(content),
                 sample_key=sample_key,
                 uploaded_at=_now(),
+                analyzer_provider=result.provider,
+                analyzer_id=result.analyzer_id,
+                analyzer_method=result.method,
             )
             extracted = _to_income(result)
             case.extracted_income = extracted

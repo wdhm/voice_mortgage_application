@@ -6,16 +6,23 @@ provider mode (so the demo is explicit about simulated vs real analysis).
 """
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
-from ..documents.port import UploadValidationError
+from ..documents.port import REQUIRED_FIELDS, UploadValidationError
 from ..documents.samples import SAMPLE_KEYS, SAMPLES, render_payslip_html, sample_pdf_path
 from ..documents.service import CONFIDENCE_THRESHOLD, validate_upload
 from ..state import app_state
 
 router = APIRouter(prefix="/api/documents")
+
+# Contract identifier + version for the advisor's downloadable structured export.
+# Bump the version if the shape changes so downstream consumers can adapt.
+EXTRACTION_SCHEMA = "bankalfa.income-extraction"
+EXTRACTION_SCHEMA_VERSION = "1.0"
 
 
 def _projection() -> dict:
@@ -46,6 +53,65 @@ def _projection() -> dict:
         "fields": fields,
         "accepted_income": accepted,
         "review_record": case.review_record.model_dump(mode="json") if case.review_record else None,
+    }
+
+
+def _extraction_contract() -> dict | None:
+    """Clean, reusable structured extraction contract for the advisor.
+
+    Server-owned and sanitized (same shape as ``_projection`` fields, no raw
+    analyzer payloads): the five normalized values with per-field confidence and
+    provenance, plus analyzer/provider metadata. This is the artifact handed to a
+    later step (e.g. the mortgage/voice conversation). Returns None when there is
+    nothing to export yet.
+    """
+    case = app_state.repo.get()
+    inc = case.extracted_income
+    if inc is None:
+        return None
+
+    fields: dict[str, dict] = {}
+    for name in REQUIRED_FIELDS:
+        f = getattr(inc, name)
+        passes = f.value is not None and f.confidence is not None and f.confidence >= CONFIDENCE_THRESHOLD
+        fields[name] = {
+            "value": f.value,
+            "normalized_value": f.normalized_value,
+            "confidence": f.confidence,
+            "provenance": f.provenance.value,
+            "source_grounding": f.source_grounding,
+            "passes": passes,
+        }
+
+    doc = case.uploaded_document
+    accepted = case.accepted_income.model_dump(mode="json") if case.accepted_income else None
+    review = case.review_record.model_dump(mode="json") if case.review_record else None
+    return {
+        "schema": EXTRACTION_SCHEMA,
+        "schema_version": EXTRACTION_SCHEMA_VERSION,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "case_id": case.case_id,
+        "document_state": case.document_state.value,
+        "document": (
+            {
+                "filename": doc.filename,
+                "content_type": doc.content_type,
+                "size_bytes": doc.size_bytes,
+                "sample_key": doc.sample_key,
+                "uploaded_at": doc.uploaded_at.isoformat(),
+            }
+            if doc
+            else None
+        ),
+        "analyzer": {
+            "provider": (doc.analyzer_provider if doc else None) or app_state.documents.provider,
+            "analyzer_id": doc.analyzer_id if doc else None,
+            "method": doc.analyzer_method if doc else None,
+            "confidence_threshold": CONFIDENCE_THRESHOLD,
+        },
+        "fields": fields,
+        "accepted_income": accepted,
+        "review": review,
     }
 
 
@@ -109,6 +175,18 @@ async def upload(file: UploadFile = File(...)) -> dict:  # noqa: B008 (FastAPI d
 @router.get("/state")
 async def get_state() -> dict:
     return _projection()
+
+
+@router.get("/extraction.json")
+async def extraction_json() -> JSONResponse:
+    """Downloadable, pretty-printed structured extraction contract for the advisor."""
+    contract = _extraction_contract()
+    if contract is None:
+        raise HTTPException(status_code=404, detail="no extraction available")
+    return JSONResponse(
+        content=contract,
+        headers={"Content-Disposition": 'inline; filename="income-extraction.json"'},
+    )
 
 
 class ReviewEdit(BaseModel):
