@@ -72,7 +72,9 @@ export function VoicePanel({ v }: { v: VoiceStreamState }) {
           <span className="mic-ring" aria-hidden />
         </button>
         {active && (
-          <span className="mic-label">{listening ? "Listening…" : "Connecting…"}</span>
+          <span className="mic-label">
+            {listening ? "Listening…" : v.digitald === "requested" ? "Waiting for identity…" : "In call"}
+          </span>
         )}
         {active && (
           <button className="mic-end" type="button" onClick={() => v.send({ type: "stop" })}>
