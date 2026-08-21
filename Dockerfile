@@ -1,7 +1,9 @@
 # Bank Alfa Mortgage AI Demo — single container: FastAPI serves REST + WS + built SPA.
 
 # --- Stage 1: build the React SPA (Vite emits to ../app/static) ---
-FROM node:24-alpine AS web
+# Debian (glibc) rather than alpine/musl: esbuild's Go binary crashes with
+# "fatal error: lfstack.push" under musl in some container runtimes.
+FROM node:24-bookworm-slim AS web
 WORKDIR /build/web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
