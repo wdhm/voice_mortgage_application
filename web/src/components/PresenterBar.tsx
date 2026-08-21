@@ -16,7 +16,7 @@ const BEATS = [
 
 export function PresenterBar({ v }: { v: VoiceStreamState }) {
   const textRef = useRef<HTMLInputElement | null>(null);
-  const ready = v.session === "active" && v.digitald === "approved";
+  const ready = v.session === "active";
 
   const sendText = (text: string) => {
     const t = text.trim();

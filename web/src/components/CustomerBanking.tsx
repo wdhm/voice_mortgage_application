@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCase, type DemoCaseView } from "../lib/api";
+import { getCase, type CaseCard, type DemoCaseView } from "../lib/api";
 
 export type CustomerService = "cards" | "mortgage" | "other";
 
@@ -161,38 +161,73 @@ export function CardsView({ refreshKey }: { refreshKey: number }) {
     getCase().then(setDemoCase).catch(() => {});
   }, [refreshKey]);
 
-  const card = demoCase?.cards[0];
-  const blocked = card?.status === "blocked" || card?.status === "replacement_ordered";
+  const defaultCards: CaseCard[] = [
+    {
+      card_id: "card-mc-4471",
+      card_type: "Bank Alfa Mastercard",
+      last_four: "4471",
+      status: "active",
+    },
+    {
+      card_id: "card-visa-1842",
+      card_type: "Bank Alfa Everyday Debit",
+      last_four: "1842",
+      status: "active",
+    },
+  ];
+  const cards = defaultCards.map(
+    (defaultCard) =>
+      demoCase?.cards.find((card) => card.card_id === defaultCard.card_id) ?? defaultCard,
+  );
 
   return (
     <div className="service-page">
       <p className="eyebrow">Cards</p>
       <h1>Your cards</h1>
       <p className="service-intro">View card details, spending and support options.</p>
-      <div className="cards-layout">
-        <div className={`bank-card ${blocked ? "blocked" : ""}`}>
-          <span className="bank-card-brand">Bank Alfa</span>
-          <span className="bank-card-chip" aria-hidden />
-          <span className="bank-card-number">•••• •••• •••• {card?.last_four ?? "4471"}</span>
-          <span className="bank-card-holder">EMMA LINDBERG</span>
-          <strong>Mastercard</strong>
-        </div>
-        <div className="card-details">
-          <span className={`card-state ${blocked ? "blocked" : ""}`}>
-            {blocked ? "Card blocked" : "Card active"}
-          </span>
-          <h2>Bank Alfa Mastercard ·{card?.last_four ?? "4471"}</h2>
-          <dl>
-            <div><dt>Available credit</dt><dd>32 450 kr</dd></div>
-            <div><dt>Monthly limit</dt><dd>50 000 kr</dd></div>
-            <div><dt>Next invoice</dt><dd>4 180 kr</dd></div>
-          </dl>
-          <div className="card-actions">
-            <button type="button">View PIN</button>
-            <button type="button">Card settings</button>
-            <button type="button" className="danger-action">Report a problem</button>
-          </div>
-        </div>
+      <div className="card-list">
+        {cards.map((card) => {
+          const isDebit = card.card_type.includes("Debit");
+          const blocked = card.status === "blocked" || card.status === "replacement_ordered";
+
+          return (
+            <div className="cards-layout" key={card.card_id}>
+              <div className={`bank-card ${isDebit ? "debit" : ""} ${blocked ? "blocked" : ""}`}>
+                <span className="bank-card-brand">Bank Alfa</span>
+                <span className="bank-card-chip" aria-hidden />
+                <span className="bank-card-number">•••• •••• •••• {card.last_four}</span>
+                <span className="bank-card-holder">EMMA LINDBERG</span>
+                <strong>{isDebit ? "VISA" : "Mastercard"}</strong>
+              </div>
+              <div className="card-details">
+                <span className={`card-state ${blocked ? "blocked" : ""}`}>
+                  {blocked ? "Card blocked" : "Card active"}
+                </span>
+                <h2>{card.card_type} ·{card.last_four}</h2>
+                <dl>
+                  {isDebit ? (
+                    <>
+                      <div><dt>Linked account</dt><dd>Salary account ·1842</dd></div>
+                      <div><dt>Available balance</dt><dd>84 250 kr</dd></div>
+                      <div><dt>Daily purchase limit</dt><dd>20 000 kr</dd></div>
+                    </>
+                  ) : (
+                    <>
+                      <div><dt>Available credit</dt><dd>32 450 kr</dd></div>
+                      <div><dt>Monthly limit</dt><dd>50 000 kr</dd></div>
+                      <div><dt>Next invoice</dt><dd>4 180 kr</dd></div>
+                    </>
+                  )}
+                </dl>
+                <div className="card-actions">
+                  <button type="button">View PIN</button>
+                  <button type="button">Card settings</button>
+                  <button type="button" className="danger-action">Report a problem</button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

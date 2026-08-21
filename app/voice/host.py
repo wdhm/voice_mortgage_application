@@ -3,13 +3,13 @@
 The host is the *only* way a conversation provider can affect the case: it routes
 tool calls through the guarded dispatcher, opens/resolves consent through the
 server-owned engine (classifying the real final user transcript), injects the
-DigitalD approval token and consent scopes server-side, and fans sanitized
+consent scopes server-side, and fans sanitized
 transcript/audio/control messages out to the browser voice channel.
 """
 from __future__ import annotations
 
 import asyncio
-import uuid
+import logging
 
 from ..domain.models import ConsentAction, ConsentStatus
 from ..domain.repository import CaseRepository
@@ -17,6 +17,8 @@ from ..events.bus import EventBus
 from ..tools.base import ToolOutcome
 from ..tools.dispatcher import ToolDispatcher
 from .port import RealtimeSession
+
+logger = logging.getLogger(__name__)
 
 _ACTION_MAP = {
     "credit_check": ConsentAction.credit_check,
@@ -59,19 +61,10 @@ class ConversationHost:
         self._tools = tools
         self._channel = channel
         self._provider = provider
-        self._approval_token: str | None = None
 
     @property
     def provider(self) -> str:
         return self._provider
-
-    # ---- DigitalD -------------------------------------------------------- #
-    def approve_digitald(self) -> str:
-        self._approval_token = f"dd-{uuid.uuid4().hex[:12]}"
-        return self._approval_token
-
-    def approval_token(self) -> str | None:
-        return self._approval_token
 
     # ---- Outbound to browser -------------------------------------------- #
     async def say(self, text: str, *, final: bool = True) -> None:
@@ -88,16 +81,15 @@ class ConversationHost:
     # ---- Governed tool dispatch ----------------------------------------- #
     async def call_tool(self, name: str, args: dict | None = None) -> ToolOutcome:
         args = dict(args or {})
-        # Server injects the DigitalD token; the model never supplies it.
-        if name == "identify_customer_with_digitald":
-            args["approval_token"] = self._approval_token
         return await self._tools.dispatch(name, args)
 
     # ---- Consent (server-owned) ----------------------------------------- #
     async def request_consent(self, action: str, *, card_id: str | None = None) -> None:
         mapped = _ACTION_MAP.get(action)
         if mapped is None:
-            return
+            raise ValueError(f"Unsupported consent action: {action}")
+        if mapped is ConsentAction.block_card and not card_id:
+            raise ValueError("A card_id is required for card-block consent.")
         scope = card_id if mapped is ConsentAction.block_card else None
         rec = await self._tools.request_consent(mapped, resource_scope=scope)
         await self._channel.publish(
@@ -149,22 +141,32 @@ class VoiceOrchestrator:
 
         return SimulatedVoiceSession(host)
 
-    async def start(self) -> None:
+    async def start(self) -> bool:
         async with self._lock:
             await self._close_locked()
             self._host = ConversationHost(
                 self._repo, self._bus, self._tools, self.channel, self._provider
             )
             self._session = self._build_session(self._host)
-        await self.channel.publish({"type": "session", "state": "active", "provider": self._provider})
-        await self._session.start()
-
-    async def approve_digitald(self) -> None:
-        if not self._host or not self._session:
-            return
-        self._host.approve_digitald()
-        await self.channel.publish({"type": "digitald", "state": "approved"})
-        await self._session.on_digitald_approved()
+            try:
+                await self._session.start()
+            except Exception:
+                logger.exception("Unable to start %s voice session", self._provider)
+                await self._close_locked()
+                await self.channel.publish(
+                    {
+                        "type": "error",
+                        "message": f"Unable to start the {self._provider} voice session.",
+                    }
+                )
+                await self.channel.publish(
+                    {"type": "session", "state": "idle", "provider": self._provider}
+                )
+                return False
+        await self.channel.publish(
+            {"type": "session", "state": "active", "provider": self._provider}
+        )
+        return True
 
     async def user_text(self, text: str) -> None:
         if self._session:

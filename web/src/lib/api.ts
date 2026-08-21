@@ -173,7 +173,6 @@ export type VoiceMessage =
   | { type: "session"; state: "active" | "idle"; provider: string }
   | { type: "agent_transcript"; text: string; final: boolean }
   | { type: "user_transcript"; text: string; final: boolean }
-  | { type: "digitald"; state: "requested" | "approved" }
   | {
       type: "consent";
       status: "requested" | "granted" | "denied" | "consumed" | "expired";
@@ -183,14 +182,11 @@ export type VoiceMessage =
     }
   | { type: "barge_in" }
   | { type: "agent_interrupted" }
-  | { type: "audio"; pcm: string };
+  | { type: "audio"; pcm: string }
+  | { type: "error"; message: string };
 
 export async function voiceStart(): Promise<void> {
   await fetch("/api/voice/start", { method: "POST" });
-}
-
-export async function voiceApproveDigitalD(): Promise<void> {
-  await fetch("/api/voice/digitald/approve", { method: "POST" });
 }
 
 export async function voiceStop(): Promise<void> {

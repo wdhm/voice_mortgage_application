@@ -48,21 +48,9 @@ class SimulatedVoiceSession:
         self._phase = Phase.AWAIT_MORTGAGE
 
     async def start(self) -> None:
+        profile = await self._host.call_tool("get_crm_profile")
         await self._host.say(
-            "Welcome to Bank Alfa. Before we begin, please approve the DigitalD "
-            "identification request on your screen."
-        )
-        await self._host.push({"type": "digitald", "state": "requested"})
-
-    async def on_digitald_approved(self) -> None:
-        ident = await self._host.call_tool("identify_customer_with_digitald")
-        if not ident.ok:
-            await self._host.say("I couldn't confirm your identification yet. Please approve the request on screen.")
-            return
-        await self._host.call_tool("get_crm_profile")
-        await self._host.say(
-            "Thank you, Emma — you're verified. I can see your Bank Alfa relationship and your "
-            "existing car loan. How can I help you today?"
+            f"Welcome to Bank Alfa, Emma. {profile.summary} How can I help you today?"
         )
         self._phase = Phase.AWAIT_MORTGAGE
 

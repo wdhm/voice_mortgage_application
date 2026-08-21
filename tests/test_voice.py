@@ -39,7 +39,6 @@ class VoiceHarness:
             self.repo.set(case)
         self._all: list[dict] = []
         await self.orch.start()
-        await self.orch.approve_digitald()
         beats = [
             "I want a mortgage pre-approval for a house in Täby, around seven million kronor.",
             "Yes, you can run the credit check.",
@@ -84,7 +83,7 @@ async def test_full_script_reaches_all_golden_outcomes(h):
     agent_msgs = [m for m in h._all if m.get("type") == "agent_transcript"]
     assert len(agent_msgs) >= 7
     transcript = " ".join(m["text"] for m in agent_msgs).lower()
-    assert "digitald" in transcript
+    assert "emma" in transcript
     assert "goodbye" in transcript
 
 
@@ -97,7 +96,6 @@ async def test_credit_gate_blocks_without_clear_consent():
     h.repo.set(case)
     h._all = []
     await h.orch.start()
-    await h.orch.approve_digitald()
     await h.orch.user_text("I'd like a mortgage for a house in Täby.")
     # Ambiguous answer must NOT grant credit-check consent.
     await h.orch.user_text("Hmm, maybe, I'm not sure.")
@@ -113,7 +111,6 @@ async def test_card_block_gate_blocks_without_consent():
     h.repo.set(case)
     h._all = []
     await h.orch.start()
-    await h.orch.approve_digitald()
     # Drive to the card topic.
     for b in [
         "Mortgage for Täby please.",
@@ -153,10 +150,12 @@ async def test_advisor_summary_contract_for_screen3(h):
     assert s.sections["income_provenance"]["net_monthly"] == 62400
 
 
-async def test_identity_required_before_profile():
+async def test_call_starts_with_known_customer_profile():
     h = VoiceHarness()
     h._all = []
     await h.orch.start()
-    # Without DigitalD approval, the identify tool has no token → stays unidentified.
-    await h.orch.user_text("Can you tell me my account details?")
-    assert h.repo.get().identity_status is IdentityStatus.unidentified
+    assert h.repo.get().identity_status is IdentityStatus.identified
+    transcript = " ".join(
+        message["text"] for message in h.drain() if message.get("type") == "agent_transcript"
+    )
+    assert "Emma" in transcript
