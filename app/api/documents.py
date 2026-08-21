@@ -7,11 +7,11 @@ provider mode (so the demo is explicit about simulated vs real analysis).
 from __future__ import annotations
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 
 from ..documents.port import UploadValidationError
-from ..documents.samples import SAMPLE_KEYS, SAMPLES, render_payslip_html
+from ..documents.samples import SAMPLE_KEYS, SAMPLES, render_payslip_html, sample_pdf_path
 from ..documents.service import CONFIDENCE_THRESHOLD, validate_upload
 from ..state import app_state
 
@@ -54,10 +54,20 @@ async def list_samples() -> list[dict]:
     return [{"key": s["key"], "label": s["label"], "description": s["description"]} for s in SAMPLES]
 
 
-@router.get("/sample/{key}/preview", response_class=HTMLResponse)
-async def sample_preview(key: str) -> HTMLResponse:
+@router.get("/sample/{key}/preview")
+async def sample_preview(key: str):
     if key not in SAMPLE_KEYS:
         raise HTTPException(status_code=404, detail="unknown sample")
+    pdf = sample_pdf_path(key)
+    if pdf is not None:
+        # Real committed PDF: preview the actual application/pdf document inline
+        # (inline disposition so the browser renders it in the iframe, not a download).
+        return FileResponse(
+            pdf,
+            media_type="application/pdf",
+            filename=pdf.name,
+            content_disposition_type="inline",
+        )
     return HTMLResponse(render_payslip_html(key))
 
 
@@ -69,10 +79,16 @@ class AnalyzeSample(BaseModel):
 async def analyze_sample(req: AnalyzeSample) -> dict:
     if req.sample_key not in SAMPLE_KEYS:
         raise HTTPException(status_code=404, detail="unknown sample")
-    html = render_payslip_html(req.sample_key).encode("utf-8")
     filename = next(s["filename"] for s in SAMPLES if s["key"] == req.sample_key)
+    pdf = sample_pdf_path(req.sample_key)
+    if pdf is not None:
+        content = pdf.read_bytes()
+        content_type = "application/pdf"
+    else:
+        content = render_payslip_html(req.sample_key).encode("utf-8")
+        content_type = "text/html"
     await app_state.documents.analyze(
-        content=html, content_type="text/html", filename=filename, sample_key=req.sample_key
+        content=content, content_type=content_type, filename=filename, sample_key=req.sample_key
     )
     return _projection()
 

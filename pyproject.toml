@@ -19,6 +19,10 @@ dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "ruff>=0.7",
+    # Generation-only: builds the committed high-confidence payslip PDF
+    # (scripts/generate_payslip_pdf.py). Not needed at runtime — the PDF is
+    # committed static — so it stays out of the runtime dependency set.
+    "reportlab>=4.0",
 ]
 
 [tool.pytest.ini_options]
