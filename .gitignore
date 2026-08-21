@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / web
+node_modules/
+web/dist/
+web/.vite/
+npm-debug.log*
+
+# Env / secrets
+.env
+.env.local
+*.local
+
+# Build output served by FastAPI
+app/static/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

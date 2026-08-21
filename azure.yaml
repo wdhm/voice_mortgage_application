@@ -1,0 +1,22 @@
+# Bank Alfa Mortgage AI Demo — Azure Developer CLI (azd) configuration.
+# Provision + deploy with:  azd up
+# (Not run during the MVP build — infra is authored and validated only.)
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+name: bank-alfa-mortgage-demo
+metadata:
+  template: bank-alfa-mortgage-demo@0.1.0
+
+infra:
+  provider: bicep
+  path: infra
+  module: main
+
+services:
+  app:
+    project: .
+    language: docker
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+      context: .
+      remoteBuild: true
