@@ -2,6 +2,7 @@
 
 ## Design intent
 
+<<<<<<< HEAD
 Bank Alfa should feel like a modern Nordic retail bank: clear, calm, trustworthy, and operational rather than promotional. The product has two distinct live work surfaces, not a landing page: a simple customer experience and a denser Bank Alfa employee service workspace.
 
 The visual direction uses a bright neutral base, dark ink text, restrained red for Bank Alfa identity, teal for verified/completed states, amber for review, and red only for destructive or blocked states. Avoid a monochromatic blue banking template, oversized marketing headings, nested cards, decorative gradients, and excessive rounded pills.
@@ -16,11 +17,19 @@ The React application exposes two synchronized routes:
 They share a case but do not share a navigation shell or expose each other's controls. For the sales demo, open them in two browser windows side by side or on two displays.
 
 ## Customer desktop layout
+=======
+Bank Alfa should feel like a modern Nordic retail bank: clear, calm, trustworthy, and operational rather than promotional. The interface is a live work surface, not a landing page.
+
+The visual direction uses a bright neutral base, dark ink text, restrained red for Bank Alfa identity, teal for verified/completed states, amber for review, and red only for destructive or blocked states. Avoid a monochromatic blue banking template, oversized marketing headings, nested cards, decorative gradients, and excessive rounded pills.
+
+## Desktop layout
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 The primary presentation viewport is a 16:9 laptop or projected display.
 
 ```text
 +-----------------------------------------------------------------------+
+<<<<<<< HEAD
 | Bank Alfa                                    Help       Secure session |
 +-----------------------------------------------------------------------+
 | YOUR MORTGAGE APPLICATION                                           |
@@ -55,13 +64,39 @@ The primary presentation viewport is a 16:9 laptop or projected display.
 - AI activity timeline: approximately 28% width.
 - The service view is denser and optimized for scanning, review, and repeated action.
 - Repeated activity events may use compact cards with radius no greater than 8px.
+=======
+| Bank Alfa | Mortgage case: Emma Lindberg | Reset demo | Connection    |
++------------------------------------------+----------------------------+
+| CUSTOMER JOURNEY                         | UNDER THE HOOD             |
+|                                          |                            |
+| Step navigation                          | Live timeline              |
+| 1 Income document                        | status  operation          |
+| 2 Voice application                      |                            |
+| 3 Advisor summary                        | Consent and handoff events |
+|                                          |                            |
+| Active customer task                     | Foundry service labels     |
+| Transcript / document review / summary   |                            |
++------------------------------------------+----------------------------+
+```
+
+- Customer journey: approximately 62% width.
+- Under-the-hood panel: approximately 38% width and always visible.
+- Header: compact, fixed height, with brand, case identity, reset, and connection status.
+- Do not place the main experience inside a floating page card.
+- Repeated timeline events may use compact cards with radius no greater than 8px.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 ## Mobile and narrow screens
 
 The demo is optimized for desktop, but must remain functional on mobile.
 
+<<<<<<< HEAD
 - Each route remains a separate experience on mobile; there is no role-switch tab.
 - The service workspace uses `Case`, `Review`, and `Activity` tabs at narrow widths.
+=======
+- Customer journey occupies the first view.
+- Under-the-hood content becomes a second tab, not a panel below an unbounded transcript.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 - Voice controls remain reachable near the bottom safe area.
 - Document fields stack without horizontal scrolling.
 - No text, status, or button may overlap at 360px width.
@@ -69,14 +104,20 @@ The demo is optimized for desktop, but must remain functional on mobile.
 ## Global controls
 
 - Bank Alfa wordmark: text treatment, not an imitation of a real bank.
+<<<<<<< HEAD
 - The customer side does not expose internal case identifiers or reset controls.
 - Service-side case indicator: `Emma Lindberg · Mortgage application`.
 - Service-side reset icon button with tooltip: requires confirmation if a session is active.
+=======
+- Case indicator: `Emma Lindberg · Mortgage application`.
+- Reset icon button with tooltip: requires confirmation if a session is active.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 - Connection indicator: disconnected, connecting, ready, reconnecting, failed.
 - Presenter mode is implicit; do not add explanatory feature copy to the live screen.
 
 ## Navigation and progress
 
+<<<<<<< HEAD
 The customer view uses a compact three-step control:
 
 1. Income document
@@ -86,28 +127,56 @@ The customer view uses a compact three-step control:
 Completed steps show a check icon. A document under review uses a neutral pending icon rather than exposing an internal warning. The service view uses task-oriented navigation: `Overview`, `Income review`, `Mortgage`, `Cards`, and `AI activity`.
 
 ## Customer side: income document
+=======
+Use a compact three-step control:
+
+1. Income document
+2. Voice application
+3. Advisor summary
+
+Completed steps show a check icon. A review-required step shows an amber alert icon. The presenter may revisit either independent part without losing accepted income unless reset is used.
+
+## Screen 1: income document
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 ### Empty state
 
 - Large but restrained upload area for PDF, PNG, JPEG, and supported image formats.
 - Upload button with file icon.
+<<<<<<< HEAD
 - A demo-only sample selector may provide `High-confidence payslip` and `Low-confidence payslip`; hide it in normal customer presentation mode.
+=======
+- Secondary sample selector with `High-confidence payslip` and `Low-confidence payslip`.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 - File constraints appear adjacent to the chooser, not as a feature tutorial.
 
 ### Analyzing state
 
 - Uploaded document preview remains visible.
+<<<<<<< HEAD
 - A stable status area says the document is being reviewed without exposing the AI service or internal fields.
+=======
+- A stable extraction field list shows skeleton values.
+- The activity panel adds `Content Understanding · Analyze payslip · Running`.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 - Disable duplicate submission while analysis is active.
 
 ### Accepted state
 
+<<<<<<< HEAD
 - Confirmation strip: `Your income document has been received`.
 - Do not show field confidence, source grounding, internal normalization, or review controls.
+=======
+- Two-column arrangement: document preview on the left, extracted fields on the right.
+- Each field shows label, normalized value, confidence percentage, and verified icon.
+- Selecting a field highlights its grounded source region in the preview where available.
+- Confirmation strip: `Income details saved to Emma's mortgage case`.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 - Primary command: `Continue to voice application`.
 
 ### Review-required state
 
+<<<<<<< HEAD
 - Customer-safe banner: `Your document needs a manual review`.
 - The customer can replace the uploaded document but cannot edit extracted bank records or approve their own evidence.
 - Once the employee resolves the task, this status updates automatically.
@@ -129,12 +198,26 @@ Completed steps show a check icon. A document under review uses a neutral pendin
 - Approval records the employee action and changes provenance to `human-approved`.
 
 ## Customer side: voice application
+=======
+- Amber banner: `Human review required`.
+- Fields below `85%` or missing are visually marked and editable.
+- Reviewer can edit values, then choose `Approve corrected details` or `Reject document`.
+- Approval records reviewer action and changes the provenance to `human-approved`.
+- Rejection does not save income and offers a new upload.
+
+## Screen 2: voice application
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 ### Ready state
 
 - Central microphone control using a familiar mic icon and `Start call` label.
 - Text-input fallback is available but visually secondary.
+<<<<<<< HEAD
 - Customer-safe context shows that the income document has been received or reviewed.
+=======
+- Case context shows that income is already verified.
+- The advisor summary pane is collapsed until relevant data exists.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 ### DigitalD modal
 
@@ -154,6 +237,7 @@ Completed steps show a check icon. A document under review uses a neutral pendin
 
 Consent is primarily conversational, but the UI mirrors it:
 
+<<<<<<< HEAD
 - The customer sees the active credit-check or card-block request in plain language, not internal consent-state names.
 - The customer does not click a separate approval button for these; the explicit spoken “yes” is captured as a consent event.
 - DigitalD remains a modal approval because it simulates an external identity handoff.
@@ -161,6 +245,16 @@ Consent is primarily conversational, but the UI mirrors it:
 ## Service side: advisor summary
 
 Shown only in the Bank Alfa service workspace.
+=======
+- Credit check: requested, granted, denied, or consumed.
+- Card block: requested for Mastercard 4471, granted, denied, or consumed.
+- The customer does not click a separate approval button for these; the explicit spoken “yes” is captured as a consent event.
+- DigitalD remains a modal approval because it simulates an external identity handoff.
+
+## Screen 3: advisor summary
+
+Shown in the same application, not a separate product.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 Sections:
 
@@ -175,9 +269,15 @@ Sections:
 
 The status must read `Preliminary assessment: looks supportable` and `Final decision: advisor required`. Never use `Approved` for the mortgage.
 
+<<<<<<< HEAD
 ## Service side: AI activity timeline
 
 The timeline is a chronological service-side view optimized for scanning during a presentation.
+=======
+## Under-the-hood panel
+
+The panel is a chronological timeline optimized for scanning during a presentation.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 Each row has fixed columns:
 
@@ -195,7 +295,11 @@ Examples:
 - `Handoff · Advisor final decision · Required`
 - `Consent · Block Mastercard 4471 · Granted`
 
+<<<<<<< HEAD
 The chosen activity scope is status-only. Customer information belongs in the case workspace, not duplicated inside activity rows. Do not show raw payloads, chain-of-thought, hidden prompts, credentials, or full customer records. A small service tag may identify `Content Understanding`, `Voice Live`, `Mock CRM`, or `Mock Cards`.
+=======
+The chosen scope is status-only. Do not show raw payloads, chain-of-thought, hidden prompts, credentials, or full customer records. A small service tag may identify `Content Understanding`, `Voice Live`, `Mock CRM`, or `Mock Cards`.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 ## Visual tokens
 
@@ -236,7 +340,11 @@ Use an expressive but highly legible sans-serif available through a permitted we
 ## Content style
 
 - Customer copy is plain English and avoids internal lending jargon.
+<<<<<<< HEAD
 - Technical service names appear only in the service-side AI activity timeline.
+=======
+- Technical service names appear only in the under-the-hood panel.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 - Currency uses `SEK 5,250,000` in UI and natural phrasing in speech.
 - Dates use `21 September 2026`; times use `15:00`.
 - Always say `preliminary assessment`, never `loan approval`.

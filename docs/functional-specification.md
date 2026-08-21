@@ -4,6 +4,7 @@
 
 - **Emma Lindberg**: fictional customer and single mortgage applicant.
 - **Voice agent**: one Voice Live agent that converses and selects tools.
+<<<<<<< HEAD
 - **Bank employee**: uses the service side, reviews uncertain document extraction, and monitors the customer case.
 - **Mortgage advisor**: receives the summary and owns the final decision.
 - **Presenter**: controls samples, DigitalD approval, text fallback, and reset.
@@ -20,6 +21,12 @@ The employee route can see Emma's mock CRM profile, existing products, extractio
 
 Both sides subscribe to the same case using different API response models and event projections. Hiding fields in React is insufficient; FastAPI must filter them at the endpoint and WebSocket boundaries.
 
+=======
+- **Document reviewer**: a human role represented in the demo UI.
+- **Mortgage advisor**: receives the summary and owns the final decision.
+- **Presenter**: controls samples, DigitalD approval, text fallback, and reset.
+
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 ## Core state model
 
 The canonical in-memory case contains:
@@ -75,7 +82,11 @@ For every field retain value, confidence, source grounding where available, extr
 - A missing confidence on a required field is treated as low confidence.
 - Any failed required field routes the whole extraction to `review_required`.
 - No extracted income reaches `accepted_income` before automatic acceptance or explicit reviewer approval.
+<<<<<<< HEAD
 - Bank-employee edits replace the field value and set provenance to `human-approved`; retain the original extraction for comparison.
+=======
+- Reviewer edits replace the field value and set provenance to `human-approved`; retain the original extraction for comparison.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 ### Part 1 terminal states
 

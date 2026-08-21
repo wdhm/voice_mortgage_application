@@ -1,8 +1,14 @@
 # Bank Alfa Mortgage AI Demo
 
+<<<<<<< HEAD
 Starter implementation for a sales demo that shows how Microsoft Foundry can power a multimodal banking journey: payslip extraction with Azure Content Understanding, followed by a real-time mortgage and card-service conversation with Voice Live.
 
 The application uses Azure Voice Live for browser-based speech-to-speech conversation. Document extraction, CRM, credit, mortgage, calendar, and card operations remain deterministic demo adapters; Azure Content Understanding is configured but its runtime adapter is not implemented yet.
+=======
+Planning repository for a sales demo that shows how Microsoft Foundry can power a multimodal banking journey: payslip extraction with Azure Content Understanding, followed by a real-time mortgage and card-service conversation with Voice Live.
+
+No application code has been created yet. The documents in this repository are the implementation brief for a future build agent.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 ## Demo at a glance
 
@@ -16,6 +22,7 @@ The application uses Azure Voice Live for browser-based speech-to-speech convers
 - Application stack: React/TypeScript frontend and Python/FastAPI backend
 - State: in-memory demo data with a one-click reset
 - Authentication: no application login; DigitalD is a simulated identity step inside the story
+<<<<<<< HEAD
 - Experiences: separate synchronized customer and bank-employee views
 
 ## Application sides
@@ -29,11 +36,22 @@ Both routes are served by the same application and share the same in-memory demo
 
 1. Emma uploads a Swedish payslip from the customer side. Content Understanding extracts employer, gross salary, net salary, employment type, and pay date with field-level confidence.
 2. The service side receives the extraction. A high-confidence result is saved to Emma's mock mortgage case; a low-confidence result becomes an editable task for the bank employee.
+=======
+
+## Narrative
+
+1. Emma uploads a Swedish payslip. Content Understanding extracts employer, gross salary, net salary, employment type, and pay date with field-level confidence.
+2. A high-confidence result is saved to Emma's mock mortgage case. A low-confidence result is routed to an editable human-review state.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 3. Emma starts a Voice Live call, completes a simulated DigitalD identification, and requests a mortgage pre-approval for a SEK 7,000,000 house in Täby with a SEK 1,750,000 deposit.
 4. After explicit consent, the agent runs a mock credit check and deterministic borrowing-capacity calculation.
 5. The agent gives a preliminary positive result, creates an advisor summary, adapts to Emma being away for three weeks, and books Monday, 21 September 2026 at 15:00.
 6. Emma reports a stolen card. The agent finds Mastercard 4471, asks for explicit final confirmation, blocks it, and orders a replacement.
+<<<<<<< HEAD
 7. The service side makes human responsibility explicit: a bank employee reviews uncertain documents and an advisor makes the final lending decision.
+=======
+7. The UI makes human responsibility explicit: an advisor reviews uncertain documents and makes the final lending decision.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 ## Documentation
 
@@ -70,6 +88,7 @@ Patterns intentionally changed:
 ## Handoff rule
 
 The future build agent must read all documents before generating code. Where an SDK or API has changed since this plan was written, it must preserve the specified behavior and update the implementation to the current stable service contract. It must not silently weaken consent gates, human review, barge-in, trace visibility, or deterministic demo reset behavior.
+<<<<<<< HEAD
 
 ## Local development
 
@@ -110,3 +129,5 @@ Backend and frontend unit tests do not require Azure. Using the microphone requi
 - The live realtime, completion, and embedding deployments are provisioned. Content Understanding analyzer and default-model mapping verification remains required before enabling the real document adapter.
 
 See [.env.sample](.env.sample) for non-secret configuration names and [Architecture and integrations](docs/architecture.md#verified-foundry-contract) for endpoint and call details.
+=======
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa

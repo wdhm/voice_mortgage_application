@@ -9,6 +9,7 @@
 - Build the presentation path first, then harden failure paths.
 - Do not add real banking integrations.
 
+<<<<<<< HEAD
 ## Audited SDK and service baseline
 
 - Voice Live: `azure-ai-voicelive==1.3.0`, async-only connection API, service API `2026-04-10`.
@@ -18,6 +19,8 @@
 - Voice Live and Content Understanding both use the Foundry account endpoint. The Foundry project endpoint is not a substitute for either data-plane endpoint.
 - The live realtime, completion, and embedding deployments are provisioned. Content Understanding defaults map to `gpt-5.2` and `text-embedding-3-large`; custom analyzer `mortgage_payslip` is provisioned by the deployment preparation script.
 
+=======
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 ## Proposed repository shape
 
 This is a target, not code created in the planning phase.
@@ -60,16 +63,25 @@ Time-box these before committing to SDK details.
 
 Exit criterion: each spike has a short recorded result in the repository, including selected API versions and any deviation from this architecture.
 
+<<<<<<< HEAD
 Audit status: versions, endpoint semantics, live model deployments, and required managed-identity roles are recorded above. The browser Voice Live proxy, PCM transport, semantic VAD, interruption handling, transcripts, and controlled mortgage tool are implemented. An authenticated Azure session and a FastAPI WebSocket tool-to-speech turn are verified against `gpt-realtime-1.5`; the physical-microphone rehearsal, analyzer/default verification, and trace-view verification remain open.
 
+=======
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 ## Phase 1: domain state and deterministic tools
 
 1. Define typed `DemoCase`, consent, event, income, credit, capacity, meeting, card, and summary models.
 2. Implement canonical Emma Lindberg fixture and reset behavior.
+<<<<<<< HEAD
 3. Define separate customer and service API projections with server-side role boundaries.
 4. Implement tool functions and server-side guards.
 5. Implement the deterministic mortgage calculation with a golden test for every intermediate value.
 6. Implement idempotency for booking and card replacement.
+=======
+3. Implement tool functions and server-side guards.
+4. Implement the deterministic mortgage calculation with a golden test for every intermediate value.
+5. Implement idempotency for booking and card replacement.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 Exit criterion: all tools pass unit tests without Voice Live or Azure access.
 
@@ -95,6 +107,7 @@ Exit criterion: both bundled documents reliably reach their intended terminal st
 
 Exit criterion: the canonical 20-beat conversation completes without manual state edits and a protected action cannot be forced through prompt wording alone.
 
+<<<<<<< HEAD
 ## Phase 4: role-oriented presentation UI
 
 1. Build `/customer` as the full-width customer journey for upload, safe status, DigitalD, voice, and confirmations.
@@ -104,6 +117,16 @@ Exit criterion: the canonical 20-beat conversation completes without manual stat
 5. Build the status-only AI activity timeline on the service side.
 6. Synchronize both views through role-filtered events without manual refresh.
 7. Add service-side reset confirmation, responsive layouts, accessibility, and reduced motion.
+=======
+## Phase 4: presentation UI
+
+1. Build the fixed customer/under-the-hood split.
+2. Build document empty, analyzing, accepted, review, rejected, and failed states.
+3. Build voice ready, identifying, active, interrupted, reconnecting, and ended states.
+4. Build the status-only operation timeline.
+5. Build the same-screen advisor summary.
+6. Add reset confirmation, responsive tabs, accessibility, and reduced motion.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 Exit criterion: Playwright screenshots at desktop and mobile viewports show no overlap, clipping, blank media, or layout shifts during dynamic updates.
 
@@ -139,7 +162,11 @@ Exit criterion: deployed demo completes both parts from a browser over HTTPS and
 
 - Given the bundled low-confidence payslip, at least one required field is below `0.85` or missing.
 - No income is accepted before review.
+<<<<<<< HEAD
 - A bank employee can edit the uncertain value and approve it from the service side.
+=======
+- A reviewer can edit the uncertain value and approve it.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 - Original extraction and human-approved value remain distinguishable in state.
 - Rejecting the document leaves Part 2 without accepted income.
 
@@ -148,9 +175,12 @@ Exit criterion: deployed demo completes both parts from a browser over HTTPS and
 - CRM details are not visible before DigitalD approval.
 - Declining DigitalD prevents CRM and protected-tool access.
 - No real identity-provider branding, credential request, or customer data appears.
+<<<<<<< HEAD
 - Customer endpoints and WebSocket events never return internal confidence, credit score, calculation workings, employee notes, or tool activity.
 - Customer requests cannot invoke document approval, rejection, or demo reset operations.
 - The service view updates when the customer uploads a payslip without a page refresh.
+=======
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 ### Mortgage conversation
 
@@ -192,7 +222,11 @@ Exit criterion: deployed demo completes both parts from a browser over HTTPS and
 
 - Every tool call emits queued, running, and terminal events in order.
 - Consent and human handoff events are visible independently of the transcript.
+<<<<<<< HEAD
 - The service-side activity timeline shows no chain-of-thought, prompt text, credential, raw document, or full card number.
+=======
+- The activity panel shows no chain-of-thought, prompt text, credential, raw document, or full card number.
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 - Tool and AI operations share correlation IDs with Application Insights spans.
 - At least one complete run is discoverable in Foundry Traces.
 
@@ -211,7 +245,10 @@ Exit criterion: deployed demo completes both parts from a browser over HTTPS and
 - Status never relies on color alone.
 - No overlap or horizontal overflow occurs at 360px, 768px, 1440px, and a 16:9 presentation viewport.
 - Reduced-motion mode removes nonessential animation.
+<<<<<<< HEAD
 - Customer and service routes are independently usable and do not collapse into a role-switching interface on mobile.
+=======
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
 
 ## Definition of done
 
@@ -225,8 +262,20 @@ Exit criterion: deployed demo completes both parts from a browser over HTTPS and
 
 ## Deferred implementation decisions
 
+<<<<<<< HEAD
 These still require Phase 0 runtime evidence:
 
 - whether labeled samples are needed to force repeatable confidence outcomes
 - numeric barge-in latency threshold on the target presentation network
 - verified Content Understanding default mappings and `mortgage_payslip` analyzer schema
+=======
+These are deliberately left for Phase 0 evidence rather than guessed in planning:
+
+- exact Voice Live API and SDK version
+- WebSocket proxy versus Voice Live WebRTC media path
+- browser audio encoding and worklet implementation
+- exact English voice and VAD parameters
+- analyzer API version and whether labeled samples are needed to force repeatable confidence outcomes
+- numeric barge-in latency threshold on the target presentation network
+- exact existing Foundry project identifiers and Azure region
+>>>>>>> b277455e654930997abeecf56a0842d12faa0eaa
