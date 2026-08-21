@@ -9,6 +9,7 @@
     "foundryEndpoint": { "value": "${FOUNDRY_ENDPOINT=https://foundry-mortgage.cognitiveservices.azure.com/}" },
     "voiceProvider": { "value": "${VOICE_PROVIDER=simulated}" },
     "documentProvider": { "value": "${DOCUMENT_PROVIDER=simulated}" },
+    "ttsProvider": { "value": "${TTS_PROVIDER=foundry}" },
     "appImage": { "value": "${SERVICE_APP_IMAGE_NAME=mcr.microsoft.com/azuredocs/containerapps-helloworld:latest}" }
   }
 }

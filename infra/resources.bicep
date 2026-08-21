@@ -11,6 +11,7 @@ param foundryAccountName string
 param foundryEndpoint string
 param voiceProvider string
 param documentProvider string
+param ttsProvider string
 param appImage string
 
 // Built-in role definition IDs.
@@ -128,6 +129,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'APP_PORT', value: '8000' }
             { name: 'VOICE_PROVIDER', value: voiceProvider }
             { name: 'DOCUMENT_PROVIDER', value: documentProvider }
+            { name: 'TTS_PROVIDER', value: ttsProvider }
             { name: 'FOUNDRY_ENDPOINT', value: foundryEndpoint }
             { name: 'AZURE_CLIENT_ID', value: identity.properties.clientId }
           ]

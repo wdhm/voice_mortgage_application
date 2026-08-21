@@ -27,6 +27,9 @@ param voiceProvider string = 'simulated'
 @description('Document capability provider: "simulated" (deterministic, offline) or "foundry".')
 param documentProvider string = 'simulated'
 
+@description('Assistant voice (TTS) provider: "foundry" (Azure neural, keyless) or "off".')
+param ttsProvider string = 'foundry'
+
 // azd populates this with the built image; the placeholder lets the template
 // validate before the first `azd deploy`.
 @description('Container image reference for the app.')
@@ -50,6 +53,7 @@ module resources 'resources.bicep' = {
     foundryEndpoint: foundryEndpoint
     voiceProvider: voiceProvider
     documentProvider: documentProvider
+    ttsProvider: ttsProvider
     appImage: appImage
   }
 }
