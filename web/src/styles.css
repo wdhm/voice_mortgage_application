@@ -81,6 +81,31 @@ body {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
+.view-switch {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: #eef1f0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.view-switch button {
+  padding: 5px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-faint);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.view-switch button.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(23, 33, 38, 0.12);
+}
 
 .brand {
   display: flex;
@@ -329,27 +354,6 @@ body {
   padding: 0;
   list-style: none;
 }
-.checklist-action {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px solid var(--border);
-}
-.checklist-action > div {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.checklist-action strong {
-  font-size: 13px;
-}
-.checklist-action span {
-  color: var(--ink-faint);
-  font-size: 11px;
-}
 .mortgage-back {
   margin-bottom: 20px;
   padding: 0;
@@ -371,21 +375,36 @@ body {
   font-weight: 500;
 }
 .mortgage-checklist li {
+  min-width: 0;
+  list-style: none;
+}
+.checklist-step {
   display: grid;
   grid-template-columns: 28px 1fr;
   align-items: center;
   gap: 9px;
+  width: 100%;
   min-width: 0;
   padding: 11px;
   border: 1px solid var(--border);
   border-radius: 9px;
   background: #fafbfa;
+  font: inherit;
+  text-align: left;
+  color: inherit;
 }
-.mortgage-checklist li.done {
+button.checklist-step {
+  cursor: pointer;
+}
+button.checklist-step:hover {
+  border-color: var(--alfa-red);
+  background: #fff;
+}
+.mortgage-checklist li.done .checklist-step {
   border-color: rgba(8, 127, 120, 0.24);
   background: #f1f9f7;
 }
-.mortgage-checklist li.current {
+.mortgage-checklist li.current .checklist-step {
   border-color: rgba(201, 52, 58, 0.4);
   background: #fff8f7;
 }
@@ -409,7 +428,7 @@ body {
   border-color: var(--alfa-red);
   color: var(--alfa-red);
 }
-.mortgage-checklist li > div {
+.checklist-step > div {
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -1139,6 +1158,86 @@ body {
   color: var(--ink-soft);
 }
 
+/* Customer upload-only view: a single clickable drop zone + a short receipt. */
+.upload-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 36px 20px;
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  background: #fafbfa;
+  text-align: center;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+}
+.upload-dropzone:hover:not(:disabled),
+.upload-dropzone.drag {
+  border-color: var(--alfa-red);
+  background: #fff8f7;
+}
+.upload-dropzone:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.upload-dropzone-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--alfa-red);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+}
+.upload-dropzone strong {
+  font-size: 15px;
+}
+.upload-dropzone-hint {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.upload-dropzone-meta {
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+.upload-receipt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.upload-receipt.ok {
+  border-color: rgba(8, 127, 120, 0.3);
+  background: #f1f9f7;
+}
+.upload-receipt.warn {
+  border-color: rgba(201, 52, 58, 0.35);
+  background: #fff8f7;
+}
+.upload-receipt > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.upload-receipt strong {
+  font-size: 14px;
+}
+.upload-receipt small {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.upload-again {
+  margin-top: 12px;
+}
 .doc-analyzing {
   display: flex;
   flex-direction: column;
@@ -1581,10 +1680,6 @@ table.kalp tr.kalp-total td:last-child { color: var(--verified-teal); }
     grid-template-columns: 1fr;
   }
   .checklist-heading {
-    flex-direction: column;
-  }
-  .checklist-action {
-    align-items: flex-start;
     flex-direction: column;
   }
   .checklist-progress {

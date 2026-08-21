@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel
 
 from ..documents.port import REQUIRED_FIELDS, UploadValidationError
@@ -156,6 +156,7 @@ async def analyze_sample(req: AnalyzeSample) -> dict:
     await app_state.documents.analyze(
         content=content, content_type=content_type, filename=filename, sample_key=req.sample_key
     )
+    app_state.remember_document(content, content_type)
     return _projection()
 
 
@@ -169,7 +170,22 @@ async def upload(file: UploadFile = File(...)) -> dict:  # noqa: B008 (FastAPI d
     await app_state.documents.analyze(
         content=content, content_type=file.content_type or "", filename=file.filename or "upload", sample_key=None
     )
+    app_state.remember_document(content, file.content_type)
     return _projection()
+
+
+@router.get("/uploaded/preview")
+async def uploaded_preview():
+    """Stream the exact document the customer last submitted, for the advisor's
+    source-document preview. Inline so the browser renders it in the iframe."""
+    data = app_state.last_document_bytes
+    if not data:
+        raise HTTPException(status_code=404, detail="no uploaded document")
+    return Response(
+        content=data,
+        media_type=app_state.last_document_content_type or "application/octet-stream",
+        headers={"Content-Disposition": "inline"},
+    )
 
 
 @router.get("/state")

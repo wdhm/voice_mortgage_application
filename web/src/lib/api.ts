@@ -86,7 +86,12 @@ export interface DocumentProjection {
   document_state: DocumentState;
   provider: string;
   threshold: number;
-  uploaded_document: { filename: string; sample_key: string | null } | null;
+  uploaded_document: {
+    filename: string;
+    content_type: string;
+    sample_key: string | null;
+    uploaded_at: string;
+  } | null;
   fields: Record<FieldName, ExtractionField> | null;
   accepted_income: Record<string, unknown> | null;
   review_record: { edited_fields: string[]; decision: string | null } | null;
@@ -147,6 +152,9 @@ export async function reviewReject(): Promise<DocumentProjection> {
 
 export const previewUrl = (sampleKey: string) =>
   `/api/documents/sample/${sampleKey}/preview`;
+
+// Preview of the exact document the customer uploaded (advisor source view).
+export const uploadedPreviewUrl = "/api/documents/uploaded/preview";
 
 export const extractionJsonUrl = "/api/documents/extraction.json";
 
