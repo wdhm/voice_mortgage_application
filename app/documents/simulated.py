@@ -4,7 +4,9 @@ Returns canonical, fixed extractions for the two bundled samples so a recorded
 demo is perfectly repeatable. The high-confidence sample extracts straight
 through; the low-confidence sample has sub-threshold net pay + employment type
 (and a just-under pay date) that force the human-review path. Arbitrary presenter
-uploads get a generic low-confidence result (they are not guaranteed to match).
+uploads get a deterministic low-confidence result so the live upload and
+human-review experience can be demonstrated without Azure access. The UI labels
+this output as simulated; genuine document extraction uses the Foundry provider.
 """
 from __future__ import annotations
 
@@ -35,13 +37,7 @@ def _low() -> dict[str, FieldExtraction]:
 
 
 def _generic() -> dict[str, FieldExtraction]:
-    return {
-        "employer_name": FieldExtraction(None, None, None, None),
-        "gross_salary_monthly": FieldExtraction(None, None, None, None),
-        "net_salary_monthly": FieldExtraction(None, None, None, None),
-        "employment_type": FieldExtraction(None, None, None, None),
-        "pay_date": FieldExtraction(None, None, None, None),
-    }
+    return _low()
 
 
 class SimulatedDocumentAnalyzer:

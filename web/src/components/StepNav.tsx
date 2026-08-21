@@ -1,7 +1,7 @@
 const STEPS = [
-  { n: 1, label: "Income check" },
-  { n: 2, label: "Advisor call" },
-  { n: 3, label: "Advisor summary" },
+  { n: 1, label: "Documents" },
+  { n: 2, label: "Affordability call" },
+  { n: 3, label: "Bank review" },
 ];
 
 export function StepNav({ active, onGo }: { active: number; onGo?: (n: number) => void }) {

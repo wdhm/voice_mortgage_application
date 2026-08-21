@@ -1,22 +1,42 @@
 import { useEffect, useRef, useState } from "react";
 import { StepNav } from "./components/StepNav";
-import { Header } from "./components/Header";
+import { Header, type AppRole } from "./components/Header";
 import { UnderTheHood } from "./components/UnderTheHood";
 import { DocumentPanel } from "./components/DocumentPanel";
 import { VoicePanel } from "./components/VoicePanel";
 import { PresenterBar } from "./components/PresenterBar";
 import { SummaryPanel } from "./components/SummaryPanel";
+import { MortgageChecklist } from "./components/MortgageChecklist";
+import {
+  BankingOverview,
+  CardsView,
+  CustomerMenu,
+  OtherServicesView,
+  type CustomerService,
+} from "./components/CustomerBanking";
 import { useEventStream } from "./lib/useEventStream";
 import { useVoice } from "./lib/useVoice";
 import { cancelSpeech, speak } from "./lib/speech";
-import { resetDemo } from "./lib/api";
+
+function roleFromPath(): AppRole {
+  return window.location.pathname.startsWith("/bank") ? "advisor" : "customer";
+}
 
 export default function App() {
-  const { events, conn, epoch } = useEventStream();
+  const { events, epoch } = useEventStream();
   const v = useVoice();
   const [step, setStep] = useState<number>(1);
+  const [role, setRole] = useState<AppRole>(roleFromPath);
+  const [customerService, setCustomerService] = useState<CustomerService | null>(null);
+  const [mortgagePage, setMortgagePage] = useState<"overview" | "application">("overview");
   const lastEpoch = useRef(epoch);
   const spokenRef = useRef(0);
+
+  useEffect(() => {
+    const onPopState = () => setRole(roleFromPath());
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   // Reset-during-call: any epoch bump (presenter reset from anywhere) returns to Screen 1.
   useEffect(() => {
@@ -48,29 +68,75 @@ export default function App() {
     if (summaryReady && step === 2) setStep(3);
   }, [summaryReady, step]);
 
-  const onReset = async () => {
-    await resetDemo();
-    setStep(1);
+  const selectCustomerService = (service: CustomerService) => {
+    setCustomerService(service);
+    if (service === "mortgage") setMortgagePage("overview");
   };
 
   return (
     <div className="app">
       {/* Recordable area — the live product surface the presenter screen-captures. */}
       <div className="rec-frame">
-        <Header conn={conn} onReset={onReset} />
-        <main className={`split ${step === 1 ? "solo" : ""}`}>
-          <section className="pane stage">
-            <p className="pane-title">Customer journey</p>
-            <StepNav active={step} onGo={setStep} />
-            {step === 1 && <DocumentPanel onContinue={() => setStep(2)} />}
-            {step === 2 && <VoicePanel v={v} />}
-            {step === 3 && <SummaryPanel refreshKey={events.length} />}
-          </section>
-          {step !== 1 && <UnderTheHood events={events} />}
-        </main>
+        <Header />
+        {role === "customer" ? (
+          <main className="customer-banking">
+            <CustomerMenu active={customerService} onSelect={selectCustomerService} />
+            <section className="customer-content">
+              {customerService === null && <BankingOverview onSelect={selectCustomerService} />}
+              {customerService === "cards" && <CardsView refreshKey={events.length} />}
+              {customerService === "other" && <OtherServicesView />}
+              {customerService === "mortgage" && mortgagePage === "overview" && (
+                <MortgageChecklist
+                  activeStep={step}
+                  onContinue={() => setMortgagePage("application")}
+                />
+              )}
+              {customerService === "mortgage" && mortgagePage === "application" && (
+                <div className="mortgage-journey">
+                  <button
+                    type="button"
+                    className="mortgage-back"
+                    onClick={() => setMortgagePage("overview")}
+                  >
+                    ← Application overview
+                  </button>
+                  <div className="mortgage-page-heading">
+                    <p className="eyebrow">Mortgage application</p>
+                    <h1>{step === 1 ? "Income verification" : step === 2 ? "Credit & affordability" : "Bank review"}</h1>
+                  </div>
+                  <StepNav active={step} onGo={setStep} />
+                  {step === 1 && (
+                    <DocumentPanel
+                      role="customer"
+                      refreshKey={events.length}
+                      onContinue={() => setStep(2)}
+                    />
+                  )}
+                  {step === 2 && <VoicePanel v={v} />}
+                  {step === 3 && <SummaryPanel refreshKey={events.length} />}
+                </div>
+              )}
+            </section>
+          </main>
+        ) : (
+          <main className="split advisor-layout">
+            <section className="pane stage advisor-workspace">
+              <div>
+                <p className="pane-title">Bank representative workspace</p>
+                <DocumentPanel role="advisor" refreshKey={events.length} />
+              </div>
+              <div className="advisor-summary">
+                <SummaryPanel refreshKey={events.length} />
+              </div>
+            </section>
+            <UnderTheHood events={events} />
+          </main>
+        )}
       </div>
       {/* Presenter controls — outside the recording: scripted customer lines. */}
-      {step === 2 && <PresenterBar v={v} />}
+      {role === "customer" && customerService === "mortgage" && mortgagePage === "application" && step === 2 && (
+        <PresenterBar v={v} />
+      )}
     </div>
   );
 }

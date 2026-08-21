@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   analyzeSample,
   getDocumentState,
@@ -13,6 +13,7 @@ import {
   type FieldName,
   type SampleMeta,
 } from "../lib/api";
+import type { AppRole } from "./Header";
 
 const FIELD_LABELS: Record<FieldName, string> = {
   employer_name: "Employer",
@@ -39,17 +40,29 @@ function confClass(f: ExtractionField): string {
   return f.passes ? "ok" : "low";
 }
 
-export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
+export function DocumentPanel({
+  role,
+  onContinue,
+  refreshKey = 0,
+}: {
+  role: AppRole;
+  onContinue?: () => void;
+  refreshKey?: number;
+}) {
   const [samples, setSamples] = useState<SampleMeta[]>([]);
   const [doc, setDoc] = useState<DocumentProjection | null>(null);
   const [busy, setBusy] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const uploadRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    listSamples().then(setSamples).catch(() => {});
-    getDocumentState().then(setDoc).catch(() => {});
-  }, []);
+    if (role === "customer") listSamples().then(setSamples).catch(() => {});
+  }, [role]);
+
+  useEffect(() => {
+    if (!busy) getDocumentState().then(setDoc).catch(() => {});
+  }, [busy, refreshKey]);
 
   const state = doc?.document_state ?? "empty";
   const sampleKey = doc?.uploaded_document?.sample_key ?? null;
@@ -118,21 +131,68 @@ export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
 
   const accepted = state === "accepted_automatically" || state === "accepted_after_review";
   const fields = doc?.fields ?? null;
+  const isAdvisor = role === "advisor";
 
   return (
     <div className="doc-panel">
       <div className="doc-head">
-        <h2>Income verification</h2>
-        {accepted && <span className="doc-status verified">✓ Income verified</span>}
+        <h2>{isAdvisor ? "Income evidence" : "Income verification"}</h2>
+        <div className="doc-head-actions">
+          {accepted && <span className="doc-status verified">✓ Income verified</span>}
+          {!isAdvisor && (
+            <>
+              <input
+                ref={uploadRef}
+                className="visually-hidden"
+                type="file"
+                accept="application/pdf,image/png,image/jpeg,image/webp,image/tiff"
+                disabled={busy}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) onUpload(file);
+                  e.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                className="icon-btn upload-new"
+                disabled={busy}
+                onClick={() => uploadRef.current?.click()}
+              >
+                + Upload new document
+              </button>
+            </>
+          )}
+        </div>
       </div>
       <p className="doc-sub">
-        The payslip is read automatically. Any field below {Math.round((doc?.threshold ?? 0.85) * 100)}% confidence is
-        flagged for the advisor to confirm before it is used.
+        {isAdvisor
+          ? `Review extracted income evidence. Fields below ${Math.round((doc?.threshold ?? 0.85) * 100)}% confidence require a human decision.`
+          : "Upload your latest payslip. We extract the income details and send uncertain fields to a Bank Alfa representative for review."}
       </p>
 
       {error && <div className="doc-error">{error}</div>}
 
-      {state === "empty" && (
+      {doc?.uploaded_document && (
+        <div className="upload-meta">
+          <div>
+            <span className="upload-file-icon" aria-hidden>PDF</span>
+            <span>
+              <strong>{doc.uploaded_document.filename}</strong>
+              <small>Processed with {doc.provider === "foundry" ? "Microsoft Foundry" : "simulated document extraction"}</small>
+            </span>
+          </div>
+          <span className={`provider-badge ${doc.provider}`}>{doc.provider}</span>
+        </div>
+      )}
+
+      {doc?.provider === "simulated" && doc.uploaded_document?.sample_key === null && (
+        <p className="simulation-note">
+          Demo mode: structured values are simulated to demonstrate the extraction and human-review workflow.
+        </p>
+      )}
+
+      {state === "empty" && !isAdvisor && (
         <div className="doc-intake">
           <div className="samples">
             <p className="pane-title">Payslips</p>
@@ -155,6 +215,12 @@ export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
         </div>
       )}
 
+      {state === "empty" && isAdvisor && (
+        <div className="doc-terminal">
+          <p>Waiting for Emma to submit a payslip.</p>
+        </div>
+      )}
+
       {state === "analyzing" && (
         <div className="doc-analyzing">
           <div className="skeleton" />
@@ -167,9 +233,14 @@ export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
       {(accepted || state === "review_required") && fields && (
         <div className="doc-review">
           <div className="analysis">
-            {state === "review_required" && (
+            {state === "review_required" && isAdvisor && (
               <div className="review-banner">
                 Human review required — correct the flagged fields, then approve.
+              </div>
+            )}
+            {state === "review_required" && !isAdvisor && (
+              <div className="review-banner customer-waiting">
+                Your payslip is with a Bank Alfa representative for review. You can continue when it has been confirmed.
               </div>
             )}
             <table className="field-table">
@@ -189,7 +260,7 @@ export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
                     <tr key={name} className={flagged ? "flagged" : ""}>
                       <td className="fname">{FIELD_LABELS[name]}</td>
                       <td className="fval">
-                        {state === "review_required" ? (
+                        {state === "review_required" && isAdvisor ? (
                           <input
                             value={editing ? drafts[name] : (f.value ?? "")}
                             onChange={(e) => setDrafts((d) => ({ ...d, [name]: e.target.value }))}
@@ -204,7 +275,9 @@ export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
                         )}
                       </td>
                       <td className={`fconf ${confClass(f)}`}>
-                        {f.provenance === "human-approved"
+                        {!isAdvisor
+                          ? f.passes || f.provenance === "human-approved" ? "Received" : "In review"
+                          : f.provenance === "human-approved"
                           ? "Confirmed"
                           : confClass(f) === "ok"
                             ? `✓ ${pct(f.confidence)}`
@@ -216,7 +289,7 @@ export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
               </tbody>
             </table>
 
-            {state === "review_required" && (
+            {state === "review_required" && isAdvisor && (
               <div className="review-actions">
                 <button className="icon-btn primary" disabled={busy} onClick={approve}>
                   Approve income
@@ -226,7 +299,7 @@ export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
                 </button>
               </div>
             )}
-            {accepted && (
+            {accepted && !isAdvisor && (
               <div className="analysis-foot">
                 <button className="icon-btn continue-next" onClick={onContinue}>
                   Continue →
@@ -245,12 +318,12 @@ export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
 
       {state === "rejected_by_reviewer" && (
         <div className="doc-terminal">
-          <p>Document rejected. Reset the demo to try another payslip.</p>
+          <p>Document rejected. Upload a new document to try again.</p>
         </div>
       )}
       {state === "analysis_failed" && (
         <div className="doc-terminal error">
-          <p>Analysis failed. Reset the demo and retry.</p>
+          <p>Analysis failed. Upload a new document and retry.</p>
         </div>
       )}
     </div>
