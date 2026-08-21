@@ -124,13 +124,6 @@ export default function App() {
           <main className="split advisor-layout">
             <section className="pane stage advisor-workspace">
               <DecisionTimeline events={events} />
-              <div>
-                <p className="pane-title">Bank representative workspace</p>
-                <DocumentPanel role="advisor" refreshKey={events.length} />
-              </div>
-              <div className="advisor-summary">
-                <SummaryPanel refreshKey={events.length} />
-              </div>
             </section>
           </main>
         )}

@@ -1976,3 +1976,80 @@ table.kalp tr.kalp-total td:last-child { color: var(--verified-teal); }
 }
 .dt-decision strong { display: block; font-size: 14px; color: var(--ink); }
 .dt-decision span { font-size: 12px; color: var(--ink-soft); }
+
+/* ---- Decision timeline: expandable nodes (M2) ------------------------ */
+.dt-details { width: 100%; }
+.dt-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+  padding: 2px 0;
+  border-radius: 6px;
+}
+.dt-summary::-webkit-details-marker { display: none; }
+.dt-summary:focus-visible {
+  outline: 2px solid var(--verified-teal);
+  outline-offset: 2px;
+}
+.dt-summary-main { flex: 1; min-width: 0; }
+.dt-chevron {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--ink-faint);
+  font-size: 14px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+.dt-details[open] > .dt-summary .dt-chevron { transform: rotate(180deg); }
+
+.dt-expand {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fbfcfc;
+}
+.dt-data { display: flex; flex-direction: column; gap: 2px; }
+.dt-data-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 13px;
+  border-bottom: 1px solid #eef1f0;
+}
+.dt-data-row:last-child { border-bottom: none; }
+.dt-data-k { color: var(--ink-soft); }
+.dt-data-v { font-variant-numeric: tabular-nums; text-align: right; color: var(--ink); }
+.dt-pending { margin: 0; font-size: 12px; color: var(--ink-faint); font-style: italic; }
+
+/* Embedded advisor panels sit flush inside the node body. */
+.dt-expand .doc-panel,
+.dt-expand .summary-panel { padding: 0; }
+
+/* Decision node as an expandable summary. */
+.dt-decision-node { margin-top: 8px; }
+.dt-decision {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: #f4f6f5;
+}
+.dt-decision::-webkit-details-marker { display: none; }
+.dt-decision:focus-visible {
+  outline: 2px solid var(--verified-teal);
+  outline-offset: 2px;
+}
+.dt-decision-node.ready .dt-decision {
+  border-color: var(--verified-teal);
+  background: #eef6f5;
+}
+.dt-decision-text { flex: 1; min-width: 0; }
+.dt-decision-node .dt-expand { margin-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
