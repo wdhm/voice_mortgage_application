@@ -145,7 +145,10 @@ body {
   grid-template-columns: 1fr;
 }
 .split.advisor-layout {
-  grid-template-columns: minmax(0, 72fr) minmax(260px, 28fr);
+  grid-template-columns: 1fr;
+}
+.split.advisor-layout .pane.stage {
+  border-right: none;
 }
 
 .pane {
@@ -167,6 +170,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 32px;
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
 }
 .advisor-summary {
   padding-top: 28px;

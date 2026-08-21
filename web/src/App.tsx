@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Header, type AppRole } from "./components/Header";
-import { UnderTheHood } from "./components/UnderTheHood";
 import { DocumentPanel } from "./components/DocumentPanel";
 import { VoicePanel } from "./components/VoicePanel";
 import { PresenterBar } from "./components/PresenterBar";
@@ -131,7 +130,6 @@ export default function App() {
                 <SummaryPanel refreshKey={events.length} />
               </div>
             </section>
-            <UnderTheHood events={events} />
           </main>
         )}
       </div>
