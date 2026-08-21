@@ -52,6 +52,16 @@ async def test_low_confidence_routes_to_review(d):
     assert case.extracted_income.employment_type.confidence < 0.85
 
 
+async def test_uploaded_document_returns_demo_extraction_for_review(d):
+    case = await d.docs.analyze(
+        content=b"%PDF-demo", content_type="application/pdf", filename="emma-payslip.pdf"
+    )
+    assert case.document_state is DocumentState.review_required
+    assert case.uploaded_document.filename == "emma-payslip.pdf"
+    assert case.extracted_income.employer_name.value == "Northstar AB"
+    assert case.accepted_income is None
+
+
 async def test_review_edit_retains_original_and_sets_provenance(d):
     await d.analyze_sample("low_confidence")
     case = await d.docs.review_edit("net_salary_monthly", "62 400 kr")
