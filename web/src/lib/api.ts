@@ -245,10 +245,25 @@ export interface CaseCard {
   status: CardStatus;
 }
 
+export interface CapacityResult {
+  inputs: Record<string, unknown>;
+  metrics: CapacityMetrics;
+  outcome: string;
+  assumptions: string[];
+  caveats: string[];
+  calculated_at: string;
+}
+
 export interface DemoCaseView {
   identity_status: IdentityStatus;
-  customer_profile: { display_name: string; existing_products?: string[] } & Record<string, unknown>;
+  customer_profile: {
+    display_name: string;
+    employer_name?: string;
+    relationship_summary?: string;
+    existing_products?: string[];
+  } & Record<string, unknown>;
   credit_result: { score?: number; band?: string } & Record<string, unknown> | null;
+  capacity_result: CapacityResult | null;
   booked_meeting:
     | { slot: { slot_id: string; start: string; advisor: string }; booking_reference: string; purpose: string }
     | null;
