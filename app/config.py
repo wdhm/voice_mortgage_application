@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     # Text-to-speech for the assistant's spoken replies: "foundry" (Azure neural
     # via the same keyless Foundry endpoint) or "off" (browser speech handles it).
     tts_provider: str = "off"
-    tts_voice: str = "sv-SE-SofieNeural"
+    tts_voice: str = "en-US-Ava:DragonHDLatestNeural"
     tts_format: str = "audio-24khz-48kbitrate-mono-mp3"
 
     # App
