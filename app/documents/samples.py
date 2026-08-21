@@ -1,16 +1,26 @@
-"""Two bundled fake Swedish payslips (Lönespecifikation), rendered as self-contained
-HTML previews. All data is fictional; no real personal data. The high-confidence
-sample is crisp; the low-confidence sample is visibly degraded (smudged net pay and
-employment type) to justify the human-review path.
+"""Two bundled fake Swedish payslips (Lönespecifikation). All data is fictional; no
+real personal data.
+
+The high-confidence sample is a real, detailed PDF committed to the repo
+(``assets/lonespec-northstar-hifi.pdf``, produced by ``scripts/generate_payslip_pdf.py``)
+so the customer uploads/previews an actual ``application/pdf`` document. The
+low-confidence sample stays a self-contained HTML preview that is visibly degraded
+(smudged net pay and employment type) to justify the human-review path.
 """
 from __future__ import annotations
+
+from pathlib import Path
+
+ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 
 SAMPLES = [
     {
         "key": "high_confidence",
         "label": "High-confidence payslip",
         "description": "Crisp digital payslip — extracts straight through.",
-        "filename": "lonespec-northstar-hifi.html",
+        "filename": "lonespec-northstar-hifi.pdf",
+        # Real committed PDF asset served as application/pdf for preview + analysis.
+        "pdf": "lonespec-northstar-hifi.pdf",
     },
     {
         "key": "low_confidence",
@@ -21,6 +31,15 @@ SAMPLES = [
 ]
 
 SAMPLE_KEYS = {s["key"] for s in SAMPLES}
+
+
+def sample_pdf_path(key: str) -> Path | None:
+    """Absolute path to a sample's bundled PDF asset, or None if it has no PDF."""
+    meta = next((s for s in SAMPLES if s["key"] == key), None)
+    if not meta or "pdf" not in meta:
+        return None
+    path = ASSETS_DIR / meta["pdf"]
+    return path if path.is_file() else None
 
 _BASE_CSS = """
 :root{--ink:#172126;--muted:#5b6b6a;--line:#D5DCDA;--red:#C9343A;--paper:#fff;}

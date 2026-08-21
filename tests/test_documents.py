@@ -62,6 +62,26 @@ async def test_uploaded_document_returns_demo_extraction_for_review(d):
     assert case.accepted_income is None
 
 
+async def test_uploading_bundled_payslip_pdf_auto_accepts(d):
+    # Uploading the genuine committed payslip PDF (no sample_key) is routed by an
+    # exact content hash to the high-confidence straight-through path.
+    from app.documents.samples import sample_pdf_path
+
+    pdf = sample_pdf_path("high_confidence")
+    assert pdf is not None, "committed high-confidence PDF asset is expected to exist"
+    case = await d.docs.analyze(
+        content=pdf.read_bytes(),
+        content_type="application/pdf",
+        filename=pdf.name,
+        sample_key=None,
+    )
+    assert case.document_state is DocumentState.accepted_automatically
+    assert case.uploaded_document.sample_key is None
+    assert case.accepted_income is not None
+    assert case.accepted_income.gross_salary_monthly == 96_000
+    assert case.accepted_income.net_salary_monthly == 62_400
+
+
 async def test_review_edit_retains_original_and_sets_provenance(d):
     await d.analyze_sample("low_confidence")
     case = await d.docs.review_edit("net_salary_monthly", "62 400 kr")

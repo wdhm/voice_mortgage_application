@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { StepNav } from "./components/StepNav";
 import { Header, type AppRole } from "./components/Header";
-import { UnderTheHood } from "./components/UnderTheHood";
 import { DocumentPanel } from "./components/DocumentPanel";
 import { VoicePanel } from "./components/VoicePanel";
 import { PresenterBar } from "./components/PresenterBar";
@@ -73,11 +71,16 @@ export default function App() {
     if (service === "mortgage") setMortgagePage("overview");
   };
 
+  const switchRole = (next: AppRole) => {
+    window.history.pushState({}, "", next === "advisor" ? "/bank" : "/");
+    setRole(next);
+  };
+
   return (
     <div className="app">
       {/* Recordable area — the live product surface the presenter screen-captures. */}
       <div className="rec-frame">
-        <Header />
+        <Header role={role} onSwitch={switchRole} />
         {role === "customer" ? (
           <main className="customer-banking">
             <CustomerMenu active={customerService} onSelect={selectCustomerService} />
@@ -88,7 +91,10 @@ export default function App() {
               {customerService === "mortgage" && mortgagePage === "overview" && (
                 <MortgageChecklist
                   activeStep={step}
-                  onContinue={() => setMortgagePage("application")}
+                  onOpenStep={(n) => {
+                    setStep(n);
+                    setMortgagePage("application");
+                  }}
                 />
               )}
               {customerService === "mortgage" && mortgagePage === "application" && (
@@ -104,13 +110,8 @@ export default function App() {
                     <p className="eyebrow">Mortgage application</p>
                     <h1>{step === 1 ? "Income verification" : step === 2 ? "Credit & affordability" : "Bank review"}</h1>
                   </div>
-                  <StepNav active={step} onGo={setStep} />
                   {step === 1 && (
-                    <DocumentPanel
-                      role="customer"
-                      refreshKey={events.length}
-                      onContinue={() => setStep(2)}
-                    />
+                    <DocumentPanel role="customer" refreshKey={events.length} />
                   )}
                   {step === 2 && <VoicePanel v={v} />}
                   {step === 3 && <SummaryPanel refreshKey={events.length} />}
@@ -129,7 +130,6 @@ export default function App() {
                 <SummaryPanel refreshKey={events.length} />
               </div>
             </section>
-            <UnderTheHood events={events} />
           </main>
         )}
       </div>

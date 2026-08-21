@@ -1,17 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  analyzeSample,
   getDocumentState,
-  listSamples,
+  getExtractionJson,
   previewUrl,
   reviewApprove,
   reviewEdit,
   reviewReject,
   uploadDocument,
+  uploadedPreviewUrl,
   type DocumentProjection,
   type ExtractionField,
   type FieldName,
-  type SampleMeta,
 } from "../lib/api";
 import type { AppRole } from "./Header";
 
@@ -31,6 +30,8 @@ const FIELD_ORDER: FieldName[] = [
   "pay_date",
 ];
 
+const ACCEPTED_TYPES = "application/pdf,image/png,image/jpeg,image/webp,image/tiff";
+
 function pct(c: number | null): string {
   return c === null ? "—" : `${Math.round(c * 100)}%`;
 }
@@ -42,41 +43,19 @@ function confClass(f: ExtractionField): string {
 
 export function DocumentPanel({
   role,
-  onContinue,
   refreshKey = 0,
 }: {
   role: AppRole;
-  onContinue?: () => void;
   refreshKey?: number;
 }) {
-  const [samples, setSamples] = useState<SampleMeta[]>([]);
   const [doc, setDoc] = useState<DocumentProjection | null>(null);
   const [busy, setBusy] = useState(false);
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
-  const uploadRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    if (role === "customer") listSamples().then(setSamples).catch(() => {});
-  }, [role]);
+  const isAdvisor = role === "advisor";
 
   useEffect(() => {
     if (!busy) getDocumentState().then(setDoc).catch(() => {});
   }, [busy, refreshKey]);
-
-  const state = doc?.document_state ?? "empty";
-  const sampleKey = doc?.uploaded_document?.sample_key ?? null;
-
-  const runSample = async (key: string) => {
-    setBusy(true);
-    setError(null);
-    setDoc({ ...(doc as DocumentProjection), document_state: "analyzing" });
-    try {
-      setDoc(await analyzeSample(key));
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const onUpload = async (file: File) => {
     setBusy(true);
@@ -91,6 +70,168 @@ export function DocumentPanel({
       setBusy(false);
     }
   };
+
+  return isAdvisor ? (
+    <AdvisorPanel doc={doc} setDoc={setDoc} busy={busy} setBusy={setBusy} error={error} setError={setError} />
+  ) : (
+    <CustomerUpload doc={doc} busy={busy} error={error} onUpload={onUpload} />
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Customer: upload only. The customer submits a payslip; all Content   */
+/* Understanding processing and results live in the bank (advisor) view. */
+/* ------------------------------------------------------------------ */
+
+function CustomerUpload({
+  doc,
+  busy,
+  error,
+  onUpload,
+}: {
+  doc: DocumentProjection | null;
+  busy: boolean;
+  error: string | null;
+  onUpload: (file: File) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  const state = doc?.document_state ?? "empty";
+  const uploaded = doc?.uploaded_document ?? null;
+  const analyzing = state === "analyzing";
+  const submitted = uploaded !== null && !analyzing;
+
+  const pick = () => !busy && inputRef.current?.click();
+
+  const receipt = (() => {
+    switch (state) {
+      case "accepted_automatically":
+      case "accepted_after_review":
+        return { tone: "ok", text: "Payslip received — your income has been verified." };
+      case "rejected_by_reviewer":
+        return { tone: "warn", text: "This document couldn't be used. Please upload a new payslip." };
+      case "analysis_failed":
+        return { tone: "warn", text: "We couldn't process that file. Please upload a new payslip." };
+      default:
+        return { tone: "ok", text: "Payslip received. Bank Alfa is reviewing your income." };
+    }
+  })();
+
+  return (
+    <div className="doc-panel">
+      <div className="doc-head">
+        <h2>Income verification</h2>
+      </div>
+      <p className="doc-sub">
+        Upload your latest payslip. Bank Alfa verifies your income from the document you submit.
+      </p>
+
+      {error && <div className="doc-error">{error}</div>}
+
+      <input
+        ref={inputRef}
+        className="visually-hidden"
+        type="file"
+        accept={ACCEPTED_TYPES}
+        disabled={busy}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onUpload(file);
+          e.target.value = "";
+        }}
+      />
+
+      {analyzing && (
+        <div className="upload-receipt busy">
+          <span className="upload-file-icon" aria-hidden>…</span>
+          <div>
+            <strong>Submitting your payslip…</strong>
+            <small>This only takes a moment.</small>
+          </div>
+        </div>
+      )}
+
+      {!analyzing && !submitted && (
+        <button
+          type="button"
+          className={`upload-dropzone ${dragOver ? "drag" : ""}`}
+          onClick={pick}
+          disabled={busy}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file) onUpload(file);
+          }}
+        >
+          <span className="upload-dropzone-icon" aria-hidden>↑</span>
+          <strong>Upload your payslip</strong>
+          <span className="upload-dropzone-hint">Click to choose a file, or drag &amp; drop it here</span>
+          <span className="upload-dropzone-meta">PDF or image (PNG, JPEG, WEBP, TIFF) · up to 10 MB</span>
+        </button>
+      )}
+
+      {submitted && (
+        <>
+          <div className={`upload-receipt ${receipt.tone}`}>
+            <span className="upload-file-icon" aria-hidden>
+              {uploaded?.content_type === "application/pdf" ? "PDF" : "DOC"}
+            </span>
+            <div>
+              <strong>{uploaded?.filename}</strong>
+              <small>{receipt.text}</small>
+            </div>
+          </div>
+          <button type="button" className="icon-btn upload-again" onClick={pick} disabled={busy}>
+            Upload a different file
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Advisor: full Content Understanding processing — extracted fields,   */
+/* human review, the structured JSON contract, and the source preview.  */
+/* ------------------------------------------------------------------ */
+
+function AdvisorPanel({
+  doc,
+  setDoc,
+  busy,
+  setBusy,
+  error,
+  setError,
+}: {
+  doc: DocumentProjection | null;
+  setDoc: React.Dispatch<React.SetStateAction<DocumentProjection | null>>;
+  busy: boolean;
+  setBusy: React.Dispatch<React.SetStateAction<boolean>>;
+  error: string | null;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
+}) {
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [extraction, setExtraction] = useState<Record<string, unknown> | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (doc?.fields) {
+      getExtractionJson().then(setExtraction).catch(() => setExtraction(null));
+    } else {
+      setExtraction(null);
+    }
+  }, [doc]);
+
+  const state = doc?.document_state ?? "empty";
+  const fields = doc?.fields ?? null;
+  const accepted = state === "accepted_automatically" || state === "accepted_after_review";
 
   const saveEdit = async (field: FieldName) => {
     const value = drafts[field];
@@ -129,93 +270,80 @@ export function DocumentPanel({
     }
   };
 
-  const accepted = state === "accepted_automatically" || state === "accepted_after_review";
-  const fields = doc?.fields ?? null;
-  const isAdvisor = role === "advisor";
+  const prettyJson = extraction ? JSON.stringify(extraction, null, 2) : "";
+
+  const copyJson = async () => {
+    if (!prettyJson) return;
+    try {
+      await navigator.clipboard.writeText(prettyJson);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  const downloadJson = () => {
+    if (!prettyJson) return;
+    const blob = new Blob([prettyJson], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "income-extraction.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const up = doc?.uploaded_document ?? null;
+  const previewCT = up?.content_type ?? "";
+  const canPreview = !!up && (!!up.sample_key || previewCT === "application/pdf" || previewCT.startsWith("image/"));
+  const previewSrc = up
+    ? up.sample_key
+      ? previewUrl(up.sample_key)
+      : `${uploadedPreviewUrl}?ts=${encodeURIComponent(up.uploaded_at)}`
+    : "";
 
   return (
     <div className="doc-panel">
       <div className="doc-head">
-        <h2>{isAdvisor ? "Income evidence" : "Income verification"}</h2>
+        <h2>Income evidence</h2>
         <div className="doc-head-actions">
           {accepted && <span className="doc-status verified">✓ Income verified</span>}
-          {!isAdvisor && (
-            <>
-              <input
-                ref={uploadRef}
-                className="visually-hidden"
-                type="file"
-                accept="application/pdf,image/png,image/jpeg,image/webp,image/tiff"
-                disabled={busy}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) onUpload(file);
-                  e.target.value = "";
-                }}
-              />
-              <button
-                type="button"
-                className="icon-btn upload-new"
-                disabled={busy}
-                onClick={() => uploadRef.current?.click()}
-              >
-                + Upload new document
-              </button>
-            </>
-          )}
         </div>
       </div>
       <p className="doc-sub">
-        {isAdvisor
-          ? `Review extracted income evidence. Fields below ${Math.round((doc?.threshold ?? 0.85) * 100)}% confidence require a human decision.`
-          : "Upload your latest payslip. We extract the income details and send uncertain fields to a Bank Alfa representative for review."}
+        Review extracted income evidence. Fields below {Math.round((doc?.threshold ?? 0.85) * 100)}% confidence
+        require a human decision.
       </p>
 
       {error && <div className="doc-error">{error}</div>}
 
-      {doc?.uploaded_document && (
+      {up && (
         <div className="upload-meta">
           <div>
-            <span className="upload-file-icon" aria-hidden>PDF</span>
+            <span className="upload-file-icon" aria-hidden>
+              {previewCT === "application/pdf" ? "PDF" : "DOC"}
+            </span>
             <span>
-              <strong>{doc.uploaded_document.filename}</strong>
-              <small>Processed with {doc.provider === "foundry" ? "Microsoft Foundry" : "simulated document extraction"}</small>
+              <strong>{up.filename}</strong>
+              <small>
+                Processed with {doc?.provider === "foundry" ? "Microsoft Foundry" : "simulated document extraction"}
+              </small>
             </span>
           </div>
-          <span className={`provider-badge ${doc.provider}`}>{doc.provider}</span>
+          <span className={`provider-badge ${doc?.provider}`}>{doc?.provider}</span>
         </div>
       )}
 
-      {doc?.provider === "simulated" && doc.uploaded_document?.sample_key === null && (
+      {doc?.provider === "simulated" && up && up.sample_key === null && (
         <p className="simulation-note">
           Demo mode: structured values are simulated to demonstrate the extraction and human-review workflow.
         </p>
       )}
 
-      {state === "empty" && !isAdvisor && (
-        <div className="doc-intake">
-          <div className="samples">
-            <p className="pane-title">Payslips</p>
-            {samples.map((s) => (
-              <button key={s.key} className="sample-card" disabled={busy} onClick={() => runSample(s.key)}>
-                <strong>{s.label}</strong>
-                <span>{s.description}</span>
-              </button>
-            ))}
-          </div>
-          <label className="upload">
-            <input
-              type="file"
-              accept="application/pdf,image/png,image/jpeg,image/webp,image/tiff"
-              disabled={busy}
-              onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
-            />
-            <span>Or upload a file (PDF / image, ≤10 MB)</span>
-          </label>
-        </div>
-      )}
-
-      {state === "empty" && isAdvisor && (
+      {state === "empty" && (
         <div className="doc-terminal">
           <p>Waiting for Emma to submit a payslip.</p>
         </div>
@@ -233,14 +361,9 @@ export function DocumentPanel({
       {(accepted || state === "review_required") && fields && (
         <div className="doc-review">
           <div className="analysis">
-            {state === "review_required" && isAdvisor && (
+            {state === "review_required" && (
               <div className="review-banner">
                 Human review required — correct the flagged fields, then approve.
-              </div>
-            )}
-            {state === "review_required" && !isAdvisor && (
-              <div className="review-banner customer-waiting">
-                Your payslip is with a Bank Alfa representative for review. You can continue when it has been confirmed.
               </div>
             )}
             <table className="field-table">
@@ -260,7 +383,7 @@ export function DocumentPanel({
                     <tr key={name} className={flagged ? "flagged" : ""}>
                       <td className="fname">{FIELD_LABELS[name]}</td>
                       <td className="fval">
-                        {state === "review_required" && isAdvisor ? (
+                        {state === "review_required" ? (
                           <input
                             value={editing ? drafts[name] : (f.value ?? "")}
                             onChange={(e) => setDrafts((d) => ({ ...d, [name]: e.target.value }))}
@@ -275,13 +398,11 @@ export function DocumentPanel({
                         )}
                       </td>
                       <td className={`fconf ${confClass(f)}`}>
-                        {!isAdvisor
-                          ? f.passes || f.provenance === "human-approved" ? "Received" : "In review"
-                          : f.provenance === "human-approved"
+                        {f.provenance === "human-approved"
                           ? "Confirmed"
                           : confClass(f) === "ok"
-                            ? `✓ ${pct(f.confidence)}`
-                            : `${pct(f.confidence)} · review`}
+                          ? `✓ ${pct(f.confidence)}`
+                          : `${pct(f.confidence)} · review`}
                       </td>
                     </tr>
                   );
@@ -289,7 +410,7 @@ export function DocumentPanel({
               </tbody>
             </table>
 
-            {state === "review_required" && isAdvisor && (
+            {state === "review_required" && (
               <div className="review-actions">
                 <button className="icon-btn primary" disabled={busy} onClick={approve}>
                   Approve income
@@ -299,18 +420,35 @@ export function DocumentPanel({
                 </button>
               </div>
             )}
-            {accepted && !isAdvisor && (
-              <div className="analysis-foot">
-                <button className="icon-btn continue-next" onClick={onContinue}>
-                  Continue →
-                </button>
+
+            {extraction && (
+              <div className="extraction-json">
+                <div className="extraction-json-head">
+                  <div>
+                    <p className="pane-title">Structured extraction</p>
+                    <span className="extraction-json-sub">
+                      Reusable JSON contract — normalized values, confidence and analyzer metadata.
+                    </span>
+                  </div>
+                  <div className="extraction-json-actions">
+                    <button type="button" className="icon-btn" onClick={copyJson}>
+                      {copied ? "Copied ✓" : "Copy"}
+                    </button>
+                    <button type="button" className="icon-btn" onClick={downloadJson}>
+                      Download .json
+                    </button>
+                  </div>
+                </div>
+                <pre className="extraction-json-body">
+                  <code>{prettyJson}</code>
+                </pre>
               </div>
             )}
           </div>
-          {sampleKey && (
+          {canPreview && (
             <div className="preview">
               <p className="preview-label">Source document</p>
-              <iframe title="Payslip preview" src={previewUrl(sampleKey)} />
+              <iframe title="Payslip preview" src={previewSrc} />
             </div>
           )}
         </div>
@@ -318,12 +456,12 @@ export function DocumentPanel({
 
       {state === "rejected_by_reviewer" && (
         <div className="doc-terminal">
-          <p>Document rejected. Upload a new document to try again.</p>
+          <p>Document rejected. Waiting for Emma to upload a new document.</p>
         </div>
       )}
       {state === "analysis_failed" && (
         <div className="doc-terminal error">
-          <p>Analysis failed. Upload a new document and retry.</p>
+          <p>Analysis failed. Waiting for a new document.</p>
         </div>
       )}
     </div>

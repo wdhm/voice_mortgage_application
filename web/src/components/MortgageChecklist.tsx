@@ -33,10 +33,10 @@ const REQUIREMENTS = [
 
 export function MortgageChecklist({
   activeStep,
-  onContinue,
+  onOpenStep,
 }: {
   activeStep: number;
-  onContinue: () => void;
+  onOpenStep: (step: number) => void;
 }) {
   const completed = 3 + Math.max(0, activeStep - 1);
 
@@ -59,27 +59,31 @@ export function MortgageChecklist({
         {REQUIREMENTS.map((item) => {
           const done = item.completedBeforeJourney || (item.step !== undefined && item.step < activeStep);
           const current = item.step === activeStep;
-          return (
-            <li key={item.title} className={done ? "done" : current ? "current" : "upcoming"}>
+          const openable = item.step !== undefined;
+          const className = done ? "done" : current ? "current" : "upcoming";
+          const body = (
+            <>
               <span className="check-state" aria-hidden>{done ? "✓" : current ? "•" : ""}</span>
               <div>
                 <strong>{item.title}</strong>
                 <small>{item.description}</small>
               </div>
-              <span className="check-label">{done ? "Complete" : current ? "In progress" : "Next"}</span>
+              <span className="check-label">{done ? "Complete" : current ? "In progress" : "Open"}</span>
+            </>
+          );
+          return (
+            <li key={item.title} className={className}>
+              {openable ? (
+                <button type="button" className="checklist-step" onClick={() => onOpenStep(item.step!)}>
+                  {body}
+                </button>
+              ) : (
+                <div className="checklist-step static">{body}</div>
+              )}
             </li>
           );
         })}
       </ol>
-      <div className="checklist-action">
-        <div>
-          <strong>Next: income documents</strong>
-          <span>Upload a payslip and review the extracted information.</span>
-        </div>
-        <button type="button" className="icon-btn primary" onClick={onContinue}>
-          Continue application →
-        </button>
-      </div>
     </section>
   );
 }
