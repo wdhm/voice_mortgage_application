@@ -42,6 +42,22 @@ body {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  gap: 10px;
+  padding: 10px;
+  background: var(--canvas);
+}
+
+/* Recordable area — the clean live product surface the presenter captures. */
+.rec-frame {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(23, 33, 38, 0.08);
 }
 
 /* ---- Header ----------------------------------------------------------- */
@@ -123,7 +139,7 @@ body {
 /* ---- Main split ------------------------------------------------------- */
 .split {
   display: grid;
-  grid-template-columns: 62fr 38fr;
+  grid-template-columns: 74fr 26fr;
   flex: 1;
   min-height: 0;
 }
@@ -133,11 +149,12 @@ body {
   overflow-y: auto;
   padding: 24px;
 }
-.pane.journey {
+.pane.stage {
   border-right: 1px solid var(--border);
 }
 .pane.hood {
   background: #eef1f0;
+  padding: 16px;
 }
 
 .pane-title {
@@ -211,27 +228,27 @@ body {
 .timeline {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
 }
 .timeline-empty {
   color: var(--ink-faint);
-  font-size: 13px;
-  padding: 12px 0;
+  font-size: 12px;
+  padding: 10px 0;
 }
 
 .row {
   display: grid;
-  grid-template-columns: 18px 1fr auto;
+  grid-template-columns: 12px 1fr auto;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 10px 12px;
+  padding: 6px 9px;
 }
 .row .status-icon {
-  width: 12px;
-  height: 12px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--ink-faint);
 }
@@ -254,7 +271,7 @@ body {
 }
 
 .row .label {
-  font-size: 13px;
+  font-size: 12px;
   min-width: 0;
 }
 .row .label .op {
@@ -262,22 +279,22 @@ body {
 }
 .row .label .svc {
   color: var(--ink-faint);
-  font-size: 11px;
+  font-size: 10px;
 }
 .row .meta {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
+  gap: 1px;
 }
 .row .state {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: capitalize;
   color: var(--ink-soft);
 }
 .row .time {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--ink-faint);
   font-variant-numeric: tabular-nums;
 }
@@ -660,4 +677,119 @@ table.kalp tr.kalp-total td:last-child { color: var(--verified-teal); }
   font-size: 13px; color: var(--review-amber);
   background: #fdf6ea; border: 1px solid var(--review-amber);
   border-radius: var(--radius); padding: 8px 12px;
+}
+
+/* ---- Live voice / microphone affordance ------------------------------ */
+.voice-live {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 0 8px;
+}
+.mic {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--alfa-red);
+  box-shadow: 0 8px 20px rgba(201, 52, 58, 0.35);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.mic-glyph {
+  font-size: 34px;
+  line-height: 1;
+}
+.mic-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid var(--alfa-red);
+  opacity: 0;
+}
+.voice-live.listening .mic {
+  background: var(--verified-teal);
+  box-shadow: 0 8px 20px rgba(8, 127, 120, 0.35);
+}
+.voice-live.listening .mic-ring {
+  border-color: var(--verified-teal);
+  animation: mic-pulse 1.6s ease-out infinite;
+}
+.mic-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.mic-end {
+  border: none;
+  background: none;
+  color: var(--ink-faint);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+@keyframes mic-pulse {
+  0% { opacity: 0.6; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+
+/* ---- Presenter bar (outside the recordable frame) -------------------- */
+.presenter-bar {
+  flex: 0 0 auto;
+  max-height: 30vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #e7eae9;
+  border: 1px dashed #b9c2c0;
+  border-radius: 12px;
+}
+.presenter-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.pt-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--review-amber);
+}
+.presenter-body {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.presenter-body .beats {
+  flex: 1;
+  min-width: 300px;
+}
+.presenter-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+.beat:disabled,
+.say-input input:disabled,
+.say-input button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.beat:disabled:hover {
+  border-color: var(--border);
+  color: var(--ink-soft);
 }

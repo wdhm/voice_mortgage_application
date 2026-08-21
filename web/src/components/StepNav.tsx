@@ -6,7 +6,7 @@ const STEPS = [
 
 export function StepNav({ active, onGo }: { active: number; onGo?: (n: number) => void }) {
   return (
-    <nav className="steps" aria-label="Demo progress">
+    <nav className="steps" aria-label="Application progress">
       {STEPS.map((s) => (
         <button
           key={s.n}

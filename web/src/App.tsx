@@ -4,14 +4,19 @@ import { Header } from "./components/Header";
 import { UnderTheHood } from "./components/UnderTheHood";
 import { DocumentPanel } from "./components/DocumentPanel";
 import { VoicePanel } from "./components/VoicePanel";
+import { PresenterBar } from "./components/PresenterBar";
 import { SummaryPanel } from "./components/SummaryPanel";
 import { useEventStream } from "./lib/useEventStream";
+import { useVoice } from "./lib/useVoice";
+import { cancelSpeech, speak } from "./lib/speech";
 import { resetDemo } from "./lib/api";
 
 export default function App() {
   const { events, conn, epoch } = useEventStream();
+  const v = useVoice();
   const [step, setStep] = useState<number>(1);
   const lastEpoch = useRef(epoch);
+  const spokenRef = useRef(0);
 
   // Reset-during-call: any epoch bump (presenter reset from anywhere) returns to Screen 1.
   useEffect(() => {
@@ -20,6 +25,20 @@ export default function App() {
       setStep(1);
     }
   }, [epoch]);
+
+  // Speak each new assistant line aloud (neural TTS + browser fallback). Lives at app
+  // scope so playback continues smoothly across step transitions.
+  useEffect(() => {
+    if (v.transcript.length < spokenRef.current) {
+      spokenRef.current = 0;
+      cancelSpeech();
+      return;
+    }
+    for (let i = spokenRef.current; i < v.transcript.length; i++) {
+      if (v.transcript[i].who === "agent") speak(v.transcript[i].text);
+    }
+    spokenRef.current = v.transcript.length;
+  }, [v.transcript]);
 
   // Auto-advance to the advisor summary once the handoff has been written.
   const summaryReady = events.some(
@@ -36,17 +55,22 @@ export default function App() {
 
   return (
     <div className="app">
-      <Header conn={conn} onReset={onReset} />
-      <main className="split">
-        <section className="pane journey">
-          <p className="pane-title">Customer journey</p>
-          <StepNav active={step} onGo={setStep} />
-          {step === 1 && <DocumentPanel onContinue={() => setStep(2)} />}
-          {step === 2 && <VoicePanel />}
-          {step === 3 && <SummaryPanel refreshKey={events.length} />}
-        </section>
-        <UnderTheHood events={events} />
-      </main>
+      {/* Recordable area — the live product surface the presenter screen-captures. */}
+      <div className="rec-frame">
+        <Header conn={conn} onReset={onReset} />
+        <main className="split">
+          <section className="pane stage">
+            <p className="pane-title">Customer journey</p>
+            <StepNav active={step} onGo={setStep} />
+            {step === 1 && <DocumentPanel onContinue={() => setStep(2)} />}
+            {step === 2 && <VoicePanel v={v} />}
+            {step === 3 && <SummaryPanel refreshKey={events.length} />}
+          </section>
+          <UnderTheHood events={events} />
+        </main>
+      </div>
+      {/* Presenter controls — outside the recording: scripted customer lines. */}
+      {step === 2 && <PresenterBar v={v} />}
     </div>
   );
 }

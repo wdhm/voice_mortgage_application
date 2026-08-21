@@ -123,9 +123,7 @@ export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
     <div className="doc-panel">
       <div className="doc-head">
         <h2>Income verification</h2>
-        <span className={`mode ${doc?.provider ?? ""}`}>
-          {doc?.provider === "foundry" ? "Foundry Content Understanding" : "Simulated analysis"}
-        </span>
+        <span className="mode foundry">Azure AI Content Understanding</span>
       </div>
       <p className="doc-sub">
         Upload the customer's payslip. Fields extracted with ≥{Math.round((doc?.threshold ?? 0.85) * 100)}% confidence
@@ -137,7 +135,7 @@ export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
       {state === "empty" && (
         <div className="doc-intake">
           <div className="samples">
-            <p className="pane-title">Demo payslips</p>
+            <p className="pane-title">Payslips</p>
             {samples.map((s) => (
               <button key={s.key} className="sample-card" disabled={busy} onClick={() => runSample(s.key)}>
                 <strong>{s.label}</strong>

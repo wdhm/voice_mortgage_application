@@ -98,7 +98,7 @@ export function SummaryPanel({ refreshKey }: { refreshKey: number }) {
         <Section title="Customer & identity">
           <Row k="Customer" v={sec.identity?.customer ?? c.customer_profile.display_name} />
           <Row k="Identification" v={c.identity_status === "identified" ? "DigitalD verified" : c.identity_status} />
-          <Row k="Assurance" v={sec.identity?.assurance ?? "demo_simulated"} />
+          <Row k="Assurance" v={sec.identity?.assurance ?? "High"} />
         </Section>
 
         <Section title="Verified income">

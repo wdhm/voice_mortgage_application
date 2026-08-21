@@ -20,8 +20,8 @@ export function Header({ conn, onReset }: { conn: ConnState; onReset: () => void
         <span className="dot" />
         {CONN_LABEL[conn]}
       </span>
-      <button className="icon-btn" onClick={onReset} title="Reset the demo to its starting state">
-        ↺ Reset demo
+      <button className="icon-btn" onClick={onReset} title="Start a new application">
+        ↺ New application
       </button>
     </header>
   );

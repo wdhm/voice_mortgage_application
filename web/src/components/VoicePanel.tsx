@@ -1,48 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { useVoice } from "../lib/useVoice";
-import { cancelSpeech, isSpeechEnabled, setSpeechEnabled, speak } from "../lib/speech";
-
-// Canonical customer utterances for the pre-recorded demo — clicking sends the
-// real transcript to the server, which classifies consent and drives the tools.
-const BEATS = [
-  "I want a mortgage pre-approval for a house in Täby, around seven million kronor.",
-  "Yes, you can run the credit check.",
-  "I have one million seven hundred and fifty thousand kronor deposit.",
-  "I'm away for three weeks. Do you have anything after that?",
-  "Monday the 21st of September at 15:00 works.",
-  "One more thing — my card was stolen.",
-  "Yes, block it and order a replacement.",
-];
+import type { VoiceStreamState } from "../lib/useVoice";
+import { isSpeechEnabled, setSpeechEnabled } from "../lib/speech";
 
 const ACTION_LABELS: Record<string, string> = {
   credit_check: "run a credit check (UC)",
   block_card: "block the card and order a replacement",
 };
 
-export function VoicePanel() {
-  const v = useVoice();
-  const textRef = useRef<HTMLInputElement | null>(null);
+export function VoicePanel({ v }: { v: VoiceStreamState }) {
   const logRef = useRef<HTMLDivElement | null>(null);
-  const spokenRef = useRef(0);
   const [voiceOn, setVoiceOn] = useState(isSpeechEnabled());
 
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
   }, [v.transcript.length]);
-
-  // Speak each new assistant line aloud (neural TTS with browser fallback).
-  useEffect(() => {
-    if (v.transcript.length < spokenRef.current) {
-      // Transcript was cleared (reset / new session) — stop any in-flight speech.
-      spokenRef.current = 0;
-      cancelSpeech();
-      return;
-    }
-    for (let i = spokenRef.current; i < v.transcript.length; i++) {
-      if (v.transcript[i].who === "agent") speak(v.transcript[i].text);
-    }
-    spokenRef.current = v.transcript.length;
-  }, [v.transcript]);
 
   const toggleVoice = () => {
     const next = !voiceOn;
@@ -50,13 +21,10 @@ export function VoicePanel() {
     setSpeechEnabled(next);
   };
 
-  const sendText = (text: string) => {
-    const t = text.trim();
-    if (!t) return;
-    v.send({ type: "text", text: t });
-  };
-
   const consentOpen = v.consent?.status === "requested";
+  const active = v.session === "active";
+  const listening = active && v.digitald === "approved";
+  const micState = listening ? "listening" : active ? "active" : "idle";
 
   return (
     <div className="voice-panel">
@@ -72,9 +40,7 @@ export function VoicePanel() {
           >
             {voiceOn ? "🔊 Voice on" : "🔇 Muted"}
           </button>
-          <span className={`mode ${v.provider}`}>
-            {v.provider === "foundry" ? "Foundry Voice Live" : "Simulated voice"}
-          </span>
+          <span className="mode foundry">Azure AI Voice Live</span>
         </div>
       </div>
       <p className="doc-sub">
@@ -88,15 +54,27 @@ export function VoicePanel() {
         </div>
       )}
 
-      {v.session === "idle" ? (
-        <button className="icon-btn primary" onClick={() => v.send({ type: "start" })}>
-          Start voice conversation
+      <div className={`voice-live ${micState}`}>
+        <button
+          type="button"
+          className="mic"
+          onClick={() => v.send({ type: active ? "stop" : "start" })}
+          title={active ? "End the voice conversation" : "Start the voice conversation"}
+        >
+          <span className="mic-glyph" aria-hidden>
+            🎙️
+          </span>
+          <span className="mic-ring" aria-hidden />
         </button>
-      ) : (
-        <button className="icon-btn subtle" onClick={() => v.send({ type: "stop" })}>
-          End conversation
-        </button>
-      )}
+        <span className="mic-label">
+          {listening ? "Listening…" : active ? "Connecting…" : "Start voice conversation"}
+        </span>
+        {active && (
+          <button className="mic-end" type="button" onClick={() => v.send({ type: "stop" })}>
+            End conversation
+          </button>
+        )}
+      </div>
 
       {v.digitald === "requested" && (
         <div className="digitald-modal">
@@ -137,33 +115,6 @@ export function VoicePanel() {
           </div>
         ))}
       </div>
-
-      {v.session === "active" && v.digitald === "approved" && (
-        <div className="say-controls">
-          <div className="beats">
-            {BEATS.map((b, i) => (
-              <button key={i} className="beat" onClick={() => sendText(b)} title={b}>
-                {b.length > 46 ? `${b.slice(0, 44)}…` : b}
-              </button>
-            ))}
-          </div>
-          <form
-            className="say-input"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (textRef.current) {
-                sendText(textRef.current.value);
-                textRef.current.value = "";
-              }
-            }}
-          >
-            <input ref={textRef} placeholder="Type what Emma says…" />
-            <button className="icon-btn" type="submit">
-              Send
-            </button>
-          </form>
-        </div>
-      )}
     </div>
   );
 }

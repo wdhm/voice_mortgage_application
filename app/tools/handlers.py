@@ -50,7 +50,7 @@ def identify_customer_with_digitald(engine: ConsentEngine, case: DemoCase, args:
             ok=True,
             result=_identity_result(case),
             summary=f"{case.customer_profile.display_name} is already identified.",
-            service="DigitalD (simulated)",
+            service="DigitalD",
             label="Identify customer (DigitalD)",
             idempotent_replay=True,
         )
@@ -63,7 +63,7 @@ def identify_customer_with_digitald(engine: ConsentEngine, case: DemoCase, args:
         ok=True,
         result=_identity_result(case),
         summary=f"Identity confirmed for {case.customer_profile.display_name} via DigitalD.",
-        service="DigitalD (simulated)",
+        service="DigitalD",
         label="Identify customer (DigitalD)",
         status=EventStatus.granted,
     )
@@ -74,7 +74,7 @@ def _identity_result(case: DemoCase) -> dict:
         "customer_id": case.customer_profile.customer_id,
         "display_name": case.customer_profile.display_name,
         "identified_at": _now().isoformat(),
-        "assurance": "demo_simulated",
+        "assurance": "high",
     }
 
 
@@ -95,7 +95,7 @@ def get_crm_profile(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOu
             "existing_car_loan_payment": p.existing_car_loan_payment,
         },
         summary=f"{p.display_name}, {p.employer_name}. {p.relationship_summary}",
-        service="Mock CRM",
+        service="Core banking",
         label="Get CRM profile",
     )
 
@@ -110,7 +110,7 @@ def run_credit_check(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolO
             ok=True,
             result=_credit_result_dict(case.credit_result),
             summary="Credit check already completed: score 781/999, risk low, no defaults.",
-            service="Mock credit bureau",
+            service="UC credit bureau",
             label="Run credit check",
             idempotent_replay=True,
         )
@@ -135,7 +135,7 @@ def run_credit_check(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolO
         ok=True,
         result=_credit_result_dict(result),
         summary="Credit check complete: score 781/999, risk low, no defaults.",
-        service="Mock credit bureau",
+        service="UC credit bureau",
         label="Run credit check",
         consent_consumed=consumed.consent_id,
     )
@@ -206,7 +206,7 @@ def calculate_borrowing_capacity(engine: ConsentEngine, case: DemoCase, args: di
             f"(LTV {comp.metrics['ltv_pct']}%, debt ratio {comp.metrics['debt_ratio']}x). "
             "This is not a final decision."
         ),
-        service="Mock mortgage engine",
+        service="Affordability engine",
         label="Calculate borrowing capacity",
     )
 
@@ -235,7 +235,7 @@ def write_advisor_summary(engine: ConsentEngine, case: DemoCase, args: dict) -> 
     sections = {
         "identity": {
             "customer": case.customer_profile.display_name,
-            "assurance": "demo_simulated",
+            "assurance": "high",
         },
         "income_provenance": {
             "employer": inc.employer_name,
@@ -272,7 +272,7 @@ def write_advisor_summary(engine: ConsentEngine, case: DemoCase, args: dict) -> 
             "sections": list(sections.keys()),
         },
         summary="Advisor summary prepared. Final decision requires a Bank Alfa advisor.",
-        service="Mock advisor handoff",
+        service="Advisor handoff",
         label="Write advisor summary",
         status=EventStatus.review,
     )
@@ -306,8 +306,8 @@ def get_available_meeting_times(engine: ConsentEngine, case: DemoCase, args: dic
         result={"slots": [_slot_dict(s) for s in slots]},
         summary="Offered "
         + ", ".join(s.start.strftime("%a %d %b %H:%M") for s in slots)
-        + " (mock availability).",
-        service="Mock calendar",
+        + " (earliest available).",
+        service="Advisor calendar",
         label="Get available meeting times",
     )
 
@@ -348,7 +348,7 @@ def book_meeting(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOutco
                 ok=True,
                 result=_booking_dict(case.booked_meeting),
                 summary=f"Meeting already booked for {case.booked_meeting.slot.start.strftime('%a %d %b %H:%M')}.",
-                service="Mock calendar",
+                service="Advisor calendar",
                 label="Book meeting",
                 idempotent_replay=True,
             )
@@ -373,7 +373,7 @@ def book_meeting(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOutco
         ok=True,
         result=_booking_dict(booking),
         summary=f"Booked {slot.start.strftime('%a %d %b %H:%M')}-{slot.end.strftime('%H:%M')} {slot.timezone}.",
-        service="Mock calendar",
+        service="Advisor calendar",
         label="Book meeting",
     )
 
@@ -404,7 +404,7 @@ def get_customer_cards(engine: ConsentEngine, case: DemoCase, args: dict) -> Too
         ok=True,
         result={"cards": cards},
         summary="; ".join(f"{c['card_type']} ****{c['last_four']} ({c['status']})" for c in cards),
-        service="Mock cards",
+        service="Card services",
         label="Get customer cards",
     )
 
@@ -427,7 +427,7 @@ def block_card_and_order_replacement(engine: ConsentEngine, case: DemoCase, args
             ok=True,
             result=_block_result(card, case.replacement_order),
             summary=f"Card ****{card.last_four} is already blocked; replacement {case.replacement_order.order_reference} on the way.",
-            service="Mock cards",
+            service="Card services",
             label="Block card & order replacement",
             idempotent_replay=True,
         )
@@ -452,7 +452,7 @@ def block_card_and_order_replacement(engine: ConsentEngine, case: DemoCase, args
         ok=True,
         result=_block_result(card, order),
         summary=f"Card ****{card.last_four} blocked and replacement {order.order_reference} ordered.",
-        service="Mock cards",
+        service="Card services",
         label="Block card & order replacement",
         status=EventStatus.granted,
         consent_consumed=consumed.consent_id,
