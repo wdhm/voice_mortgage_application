@@ -1826,3 +1826,153 @@ table.kalp tr.kalp-total td:last-child { color: var(--verified-teal); }
   border-color: var(--border);
   color: var(--ink-soft);
 }
+
+/* ---- Decision timeline (bank view spine) ----------------------------- */
+.decision-timeline {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 20px 22px;
+}
+.dt-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.dt-head .pane-title { margin: 0 0 4px; }
+.dt-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+  max-width: 52ch;
+}
+.dt-progress {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+.dt-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.dt-node {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+}
+.dt-rail {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+/* Connecting line between markers. */
+.dt-rail::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+.dt-node:first-child .dt-rail::before { top: 14px; }
+.dt-node:last-child .dt-rail::before { bottom: calc(100% - 14px); }
+.dt-marker {
+  position: relative;
+  z-index: 1;
+  margin-top: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  line-height: 1;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  color: var(--ink-faint);
+}
+.dt-node.progress .dt-marker {
+  border-color: var(--review-amber);
+  color: var(--review-amber);
+}
+.dt-node.fulfilled .dt-marker {
+  border-color: var(--verified-teal);
+  background: var(--verified-teal);
+  color: #fff;
+}
+.dt-body {
+  padding: 4px 0 18px;
+  min-width: 0;
+}
+.dt-node:last-child .dt-body { padding-bottom: 4px; }
+.dt-node-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.dt-label {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+}
+.dt-node.missing .dt-label { color: var(--ink-soft); }
+.dt-status {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+.dt-status.progress { color: var(--review-amber); }
+.dt-status.fulfilled { color: var(--verified-teal); }
+.dt-node-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+.dt-decision {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: #f4f6f5;
+}
+.dt-decision.ready {
+  border-color: var(--verified-teal);
+  background: #eef6f5;
+}
+.dt-decision-icon {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  color: var(--ink-faint);
+}
+.dt-decision.ready .dt-decision-icon {
+  border-color: var(--verified-teal);
+  background: var(--verified-teal);
+  color: #fff;
+}
+.dt-decision strong { display: block; font-size: 14px; color: var(--ink); }
+.dt-decision span { font-size: 12px; color: var(--ink-soft); }

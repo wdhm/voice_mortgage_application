@@ -5,6 +5,7 @@ import { VoicePanel } from "./components/VoicePanel";
 import { PresenterBar } from "./components/PresenterBar";
 import { SummaryPanel } from "./components/SummaryPanel";
 import { MortgageChecklist } from "./components/MortgageChecklist";
+import { DecisionTimeline } from "./components/DecisionTimeline";
 import {
   BankingOverview,
   CardsView,
@@ -122,6 +123,7 @@ export default function App() {
         ) : (
           <main className="split advisor-layout">
             <section className="pane stage advisor-workspace">
+              <DecisionTimeline events={events} />
               <div>
                 <p className="pane-title">Bank representative workspace</p>
                 <DocumentPanel role="advisor" refreshKey={events.length} />
