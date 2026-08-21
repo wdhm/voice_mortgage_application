@@ -58,7 +58,7 @@ export default function App() {
       {/* Recordable area — the live product surface the presenter screen-captures. */}
       <div className="rec-frame">
         <Header conn={conn} onReset={onReset} />
-        <main className="split">
+        <main className={`split ${step === 1 ? "solo" : ""}`}>
           <section className="pane stage">
             <p className="pane-title">Customer journey</p>
             <StepNav active={step} onGo={setStep} />
@@ -66,7 +66,7 @@ export default function App() {
             {step === 2 && <VoicePanel v={v} />}
             {step === 3 && <SummaryPanel refreshKey={events.length} />}
           </section>
-          <UnderTheHood events={events} />
+          {step !== 1 && <UnderTheHood events={events} />}
         </main>
       </div>
       {/* Presenter controls — outside the recording: scripted customer lines. */}

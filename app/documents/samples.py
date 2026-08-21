@@ -81,7 +81,7 @@ def _payslip(*, net_html: str, emp_html: str, degraded: bool) -> str:
     <div class="row"><span class="k">Preliminär skatt</span><span class="v">−33 600 kr</span></div>
     <div class="row net"><span class="k">Nettolön (utbetalas)</span><span class="v {'smudge' if degraded else ''}">{net_html}</span></div>
   </div>
-  <p class="foot">{note}<br>Detta är ett fiktivt dokument för demonstration. Inga verkliga personuppgifter.</p>
+  <p class="foot">{note}</p>
 </div></body></html>"""
 
 

@@ -29,7 +29,7 @@ export function VoicePanel({ v }: { v: VoiceStreamState }) {
   return (
     <div className="voice-panel">
       <div className="voice-head">
-        <h2>Voice application</h2>
+        <h2>Advisor call</h2>
         <div className="voice-head-meta">
           <button
             type="button"
@@ -40,12 +40,14 @@ export function VoicePanel({ v }: { v: VoiceStreamState }) {
           >
             {voiceOn ? "🔊 Voice on" : "🔇 Muted"}
           </button>
-          <span className="mode foundry">Azure AI Voice Live</span>
+          <span className="live-tag">
+            <span className="live-dot" /> Live
+          </span>
         </div>
       </div>
       <p className="doc-sub">
-        Emma speaks with the Bank Alfa assistant. Identity, consent and every credit
-        action are gated server-side — the model can only ask.
+        Talk to your Bank Alfa advisor. Every credit action is carried out only after you
+        confirm it out loud.
       </p>
 
       {v.conn === "reconnecting" && (

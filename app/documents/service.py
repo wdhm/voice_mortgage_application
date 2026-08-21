@@ -126,7 +126,7 @@ class DocumentService:
             event_type="document.analyzing",
             label="Analyze payslip",
             status=EventStatus.running,
-            service="Azure AI Content Understanding",
+            service="Document analysis",
         )
         try:
             result = await self._analyzer.analyze(
@@ -141,7 +141,7 @@ class DocumentService:
                 self._repo.set(case)
             await self._bus.emit(
                 event_type="document.failed", label=f"Analysis failed: {exc}",
-                status=EventStatus.failed, service="Azure AI Content Understanding",
+                status=EventStatus.failed, service="Document analysis",
             )
             return self._repo.get()
 
@@ -173,13 +173,13 @@ class DocumentService:
         if not failing:
             await self._bus.emit(
                 event_type="document.accepted", label="Income extracted and accepted",
-                status=EventStatus.completed, service="Azure AI Content Understanding",
+                status=EventStatus.completed, service="Document analysis",
             )
         else:
             await self._bus.emit(
                 event_type="document.review_required",
                 label=f"Human review required ({len(failing)} field(s) below {int(CONFIDENCE_THRESHOLD*100)}%)",
-                status=EventStatus.review, service="Azure AI Content Understanding",
+                status=EventStatus.review, service="Document analysis",
             )
         return self._repo.get()
 

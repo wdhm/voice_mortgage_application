@@ -123,11 +123,11 @@ export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
     <div className="doc-panel">
       <div className="doc-head">
         <h2>Income verification</h2>
-        <span className="mode foundry">Azure AI Content Understanding</span>
+        {accepted && <span className="doc-status verified">✓ Income verified</span>}
       </div>
       <p className="doc-sub">
-        Upload the customer's payslip. Fields extracted with ≥{Math.round((doc?.threshold ?? 0.85) * 100)}% confidence
-        are accepted automatically; anything lower goes to human review.
+        The payslip is read automatically. Any field below {Math.round((doc?.threshold ?? 0.85) * 100)}% confidence is
+        flagged for the advisor to confirm before it is used.
       </p>
 
       {error && <div className="doc-error">{error}</div>}
@@ -166,20 +166,20 @@ export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
 
       {(accepted || state === "review_required") && fields && (
         <div className="doc-review">
-          <div className="fields">
+          <div className="analysis">
             {state === "review_required" && (
               <div className="review-banner">
                 Human review required — correct the flagged fields, then approve.
               </div>
             )}
-            {accepted && (
-              <div className={`accept-banner ${state === "accepted_after_review" ? "human" : ""}`}>
-                {state === "accepted_after_review"
-                  ? "Income accepted after human review."
-                  : "Income extracted and accepted automatically."}
-              </div>
-            )}
             <table className="field-table">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Extracted value</th>
+                  <th className="fconf">Confidence</th>
+                </tr>
+              </thead>
               <tbody>
                 {FIELD_ORDER.map((name) => {
                   const f = fields[name];
@@ -204,7 +204,11 @@ export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
                         )}
                       </td>
                       <td className={`fconf ${confClass(f)}`}>
-                        {f.provenance === "human-approved" ? "human" : pct(f.confidence)}
+                        {f.provenance === "human-approved"
+                          ? "Confirmed"
+                          : confClass(f) === "ok"
+                            ? `✓ ${pct(f.confidence)}`
+                            : `${pct(f.confidence)} · review`}
                       </td>
                     </tr>
                   );
@@ -223,14 +227,16 @@ export function DocumentPanel({ onContinue }: { onContinue: () => void }) {
               </div>
             )}
             {accepted && (
-              <button className="icon-btn primary continue" onClick={onContinue}>
-                Continue to voice application →
-              </button>
+              <div className="analysis-foot">
+                <button className="icon-btn continue-next" onClick={onContinue}>
+                  Continue →
+                </button>
+              </div>
             )}
           </div>
           {sampleKey && (
             <div className="preview">
-              <p className="pane-title">Source document</p>
+              <p className="preview-label">Source document</p>
               <iframe title="Payslip preview" src={previewUrl(sampleKey)} />
             </div>
           )}

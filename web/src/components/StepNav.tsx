@@ -1,6 +1,6 @@
 const STEPS = [
-  { n: 1, label: "Income document" },
-  { n: 2, label: "Voice application" },
+  { n: 1, label: "Income check" },
+  { n: 2, label: "Advisor call" },
   { n: 3, label: "Advisor summary" },
 ];
 
