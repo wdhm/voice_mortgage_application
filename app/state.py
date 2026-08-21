@@ -14,6 +14,7 @@ from .domain.fixtures import CASE_ID
 from .domain.repository import InMemoryCaseRepository
 from .events.bus import EventBus
 from .events.models import EventStatus
+from .speech.tts import TextToSpeech, make_tts
 from .tools.dispatcher import ToolDispatcher
 from .voice.host import VoiceOrchestrator
 
@@ -37,6 +38,7 @@ class AppState:
         self.tools = ToolDispatcher(self.repo, self.bus, self.consent)
         self.documents = DocumentService(self.repo, self.bus, _make_analyzer())
         self.voice = VoiceOrchestrator(self.repo, self.bus, self.tools, settings.voice_provider)
+        self.tts: TextToSpeech | None = make_tts()
 
     async def reset(self) -> None:
         """Reset the case (new epoch) and clear the timeline, then emit a reset event."""

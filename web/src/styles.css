@@ -526,6 +526,21 @@ body {
 .voice-panel { display: flex; flex-direction: column; gap: 14px; }
 .voice-head { display: flex; align-items: center; justify-content: space-between; }
 .voice-head h2 { font-family: var(--font-display); font-weight: 600; margin: 0; }
+.voice-head-meta { display: flex; align-items: center; gap: 8px; }
+.voice-toggle {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.voice-toggle.on { color: var(--verified-teal); border-color: var(--verified-teal); }
+.voice-toggle.off { color: var(--ink-soft); }
+.voice-toggle:hover { background: var(--surface-muted, #f2efe9); }
 
 .icon-btn.subtle { background: var(--surface); color: var(--ink-soft); border: 1px solid var(--border); }
 

@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .api import debug, documents, routes, voice, ws
+from .api import debug, documents, routes, tts, voice, ws
 from .config import settings
 
 logging.basicConfig(level=settings.log_level)
@@ -32,6 +32,7 @@ app.add_middleware(
 app.include_router(routes.router)
 app.include_router(debug.router)
 app.include_router(documents.router)
+app.include_router(tts.router)
 app.include_router(voice.router)
 app.include_router(ws.router)
 

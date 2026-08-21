@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useVoice } from "../lib/useVoice";
+import { cancelSpeech, isSpeechEnabled, setSpeechEnabled, speak } from "../lib/speech";
 
 // Canonical customer utterances for the pre-recorded demo — clicking sends the
 // real transcript to the server, which classifies consent and drives the tools.
@@ -22,10 +23,32 @@ export function VoicePanel() {
   const v = useVoice();
   const textRef = useRef<HTMLInputElement | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);
+  const spokenRef = useRef(0);
+  const [voiceOn, setVoiceOn] = useState(isSpeechEnabled());
 
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
   }, [v.transcript.length]);
+
+  // Speak each new assistant line aloud (neural TTS with browser fallback).
+  useEffect(() => {
+    if (v.transcript.length < spokenRef.current) {
+      // Transcript was cleared (reset / new session) — stop any in-flight speech.
+      spokenRef.current = 0;
+      cancelSpeech();
+      return;
+    }
+    for (let i = spokenRef.current; i < v.transcript.length; i++) {
+      if (v.transcript[i].who === "agent") speak(v.transcript[i].text);
+    }
+    spokenRef.current = v.transcript.length;
+  }, [v.transcript]);
+
+  const toggleVoice = () => {
+    const next = !voiceOn;
+    setVoiceOn(next);
+    setSpeechEnabled(next);
+  };
 
   const sendText = (text: string) => {
     const t = text.trim();
@@ -39,9 +62,20 @@ export function VoicePanel() {
     <div className="voice-panel">
       <div className="voice-head">
         <h2>Voice application</h2>
-        <span className={`mode ${v.provider}`}>
-          {v.provider === "foundry" ? "Foundry Voice Live" : "Simulated voice"}
-        </span>
+        <div className="voice-head-meta">
+          <button
+            type="button"
+            className={`voice-toggle ${voiceOn ? "on" : "off"}`}
+            onClick={toggleVoice}
+            aria-pressed={voiceOn}
+            title={voiceOn ? "Assistant voice on — click to mute" : "Assistant voice muted — click to enable"}
+          >
+            {voiceOn ? "🔊 Voice on" : "🔇 Muted"}
+          </button>
+          <span className={`mode ${v.provider}`}>
+            {v.provider === "foundry" ? "Foundry Voice Live" : "Simulated voice"}
+          </span>
+        </div>
       </div>
       <p className="doc-sub">
         Emma speaks with the Bank Alfa assistant. Identity, consent and every credit

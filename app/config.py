@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     voice_provider: str = "foundry"
     document_provider: str = "foundry"
 
+    # Text-to-speech for the assistant's spoken replies: "foundry" (Azure neural
+    # via the same keyless Foundry endpoint) or "off" (browser speech handles it).
+    tts_provider: str = "off"
+    tts_voice: str = "en-US-EmmaMultilingualNeural"
+    tts_format: str = "audio-24khz-48kbitrate-mono-mp3"
+
     # App
     app_host: str = "127.0.0.1"
     app_port: int = 8000

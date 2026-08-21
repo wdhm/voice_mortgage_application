@@ -18,6 +18,7 @@ async def health() -> dict:
         "status": "ok",
         "voice_provider": settings.voice_provider,
         "document_provider": settings.document_provider,
+        "tts_provider": settings.tts_provider,
         "foundry_configured": bool(settings.foundry_endpoint),
         "epoch": app_state.repo.epoch,
     }
