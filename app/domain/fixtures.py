@@ -2,7 +2,7 @@
 
 All values are fictional demo data (per docs/business-case-and-demo-script.md).
 The customer record exists, but no income is accepted, no identity is confirmed,
-and Mastercard ending 4471 is active with no replacement order.
+and both cards are active with no replacement order.
 """
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ from .models import (
 CASE_ID = "case-emma"
 CUSTOMER_ID = "cust-emma-lindberg"
 MASTERCARD_ID = "card-mc-4471"
+VISA_DEBIT_ID = "card-visa-1842"
 
 
 def build_canonical_case(session_id: str, epoch: int = 0) -> DemoCase:
@@ -31,7 +32,7 @@ def build_canonical_case(session_id: str, epoch: int = 0) -> DemoCase:
         case_id=CASE_ID,
         session_id=session_id,
         epoch=epoch,
-        identity_status=IdentityStatus.unidentified,
+        identity_status=IdentityStatus.identified,
         document_state=DocumentState.empty,
         customer_profile=CustomerProfile(
             customer_id=CUSTOMER_ID,
@@ -46,6 +47,12 @@ def build_canonical_case(session_id: str, epoch: int = 0) -> DemoCase:
                 card_id=MASTERCARD_ID,
                 card_type="Bank Alfa Mastercard",
                 last_four="4471",
+                status=CardStatus.active,
+            ),
+            Card(
+                card_id=VISA_DEBIT_ID,
+                card_type="Bank Alfa Everyday Debit",
+                last_four="1842",
                 status=CardStatus.active,
             ),
         ],

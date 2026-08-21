@@ -23,7 +23,7 @@ export function VoicePanel({ v }: { v: VoiceStreamState }) {
 
   const consentOpen = v.consent?.status === "requested";
   const active = v.session === "active";
-  const listening = active && v.digitald === "approved";
+  const listening = active;
   const micState = listening ? "listening" : active ? "active" : "idle";
 
   return (
@@ -61,8 +61,11 @@ export function VoicePanel({ v }: { v: VoiceStreamState }) {
           type="button"
           className="mic"
           onClick={() => {
-            if (!active) primeAudio();
-            v.send({ type: active ? "stop" : "start" });
+            if (active) v.stop();
+            else {
+              primeAudio();
+              void v.start();
+            }
           }}
           title={active ? "End the voice conversation" : "Start the voice conversation"}
         >
@@ -73,27 +76,15 @@ export function VoicePanel({ v }: { v: VoiceStreamState }) {
         </button>
         {active && (
           <span className="mic-label">
-            {listening ? "Listening…" : v.digitald === "requested" ? "Waiting for identity…" : "In call"}
+            {listening ? "Listening…" : "In call"}
           </span>
         )}
         {active && (
-          <button className="mic-end" type="button" onClick={() => v.send({ type: "stop" })}>
+          <button className="mic-end" type="button" onClick={v.stop}>
             End conversation
           </button>
         )}
       </div>
-
-      {v.digitald === "requested" && (
-        <div className="digitald-modal">
-          <div className="dd-body">
-            <strong>DigitalD identity request</strong>
-            <p>Emma is authenticating with BankID / DigitalD. Approve to continue.</p>
-            <button className="icon-btn primary" onClick={() => v.send({ type: "digitald_approve" })}>
-              Approve identity
-            </button>
-          </div>
-        </div>
-      )}
 
       {consentOpen && v.consent && (
         <div className="consent-prompt">

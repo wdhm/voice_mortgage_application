@@ -6,7 +6,7 @@ Two providers implement `RealtimeSession`:
 
 Both are governed identically: they never touch the case, tools, or consent
 directly. Everything flows through a `ConversationHost`, which is the single
-server-owned choke point (tool dispatch, consent, DigitalD token, and the
+server-owned choke point (tool dispatch, consent, and the
 sanitized outbound channel to the browser). Providers only *decide what to say
 and which tool to ask for*; the host decides whether it is allowed.
 """
@@ -25,9 +25,6 @@ class ConversationHost(Protocol):
 
     @property
     def provider(self) -> str: ...
-
-    def approval_token(self) -> str | None:
-        """DigitalD approval token for this session, or None until the presenter approves."""
 
     async def say(self, text: str, *, final: bool = True) -> None:
         """Surface an agent utterance to the browser transcript."""
@@ -52,10 +49,7 @@ class RealtimeSession(Protocol):
     def provider(self) -> str: ...
 
     async def start(self) -> None:
-        """Begin the session (greeting + DigitalD request)."""
-
-    async def on_digitald_approved(self) -> None:
-        """Presenter approved the DigitalD modal."""
+        """Begin the session and greet the known demo customer."""
 
     async def on_user_text(self, text: str) -> None:
         """A final user turn arrived as text (text fallback, first-class)."""
