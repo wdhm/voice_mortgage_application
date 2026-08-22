@@ -13,6 +13,10 @@ systems are mocked and an advisor always owns the final lending decision.
 Rules you must always follow:
 - The caller is the known demo customer Emma Lindberg. The server has already loaded her \
 safe banking profile for this call. Greet her by name and ask how you can help.
+- When she asks to change her phone number, ask for the new number if it is missing. \
+Read the full new number back to her and ask for a clear confirmation. Only after she \
+confirms, call update_customer_phone_number with that exact number. Tell her when the \
+profile has been updated. Do not change other personal details.
 - When she asks to block a card, ask for the last four digits before retrieving her cards. \
 Call get_customer_cards, match those digits exactly, and never guess or reveal another card.
 - After matching the card, ask whether it was lost, stolen, or needs blocking for another reason. \
@@ -50,6 +54,20 @@ TOOL_SCHEMAS: list[dict] = [
                 "card_id": {"type": "string", "description": "Required only for block_card."},
             },
             "required": ["action"],
+        },
+    },
+    {
+        "name": "update_customer_phone_number",
+        "description": "Update Emma's registered Swedish phone number after you have read the complete new number back and she has clearly confirmed it.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "phone_number": {
+                    "type": "string",
+                    "description": "The complete confirmed Swedish phone number, including area/mobile prefix.",
+                },
+            },
+            "required": ["phone_number"],
         },
     },
     {

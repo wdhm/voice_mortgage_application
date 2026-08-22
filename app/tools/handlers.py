@@ -1,4 +1,4 @@
-"""The nine deterministic demo tools.
+"""The deterministic demo tools.
 
 Each handler mutates the DemoCase in place and returns a ToolOutcome. Guards
 raise GuardError; protected tools call ConsentEngine.consume (which raises
@@ -7,6 +7,7 @@ a recorded demo replays identically. No handler lets the model compute figures.
 """
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import UTC, date, datetime, time, timedelta
 
@@ -88,7 +89,16 @@ def get_crm_profile(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOu
         ok=True,
         result={
             "customer_id": p.customer_id,
+            "customer_number": p.customer_number,
             "display_name": p.display_name,
+            "phone_number": p.phone_number,
+            "email": p.email,
+            "address": {
+                "street": p.street_address,
+                "postal_code": p.postal_code,
+                "city": p.city,
+                "country": p.country,
+            },
             "employer_name": p.employer_name,
             "relationship_summary": p.relationship_summary,
             "existing_car_loan_balance": p.existing_car_loan_balance,
@@ -101,7 +111,68 @@ def get_crm_profile(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOu
 
 
 # --------------------------------------------------------------------------- #
-# 3. run_credit_check  (protected: credit_check consent)
+# 3. update_customer_phone_number
+# --------------------------------------------------------------------------- #
+def _normalize_swedish_phone_number(raw: object) -> str:
+    if not isinstance(raw, str) or not raw.strip():
+        raise ToolInputError("A new phone number is required.")
+
+    compact = re.sub(r"[\s().-]", "", raw.strip())
+    if compact.startswith("0046"):
+        compact = f"+46{compact[4:]}"
+    elif compact.startswith("0"):
+        compact = f"+46{compact[1:]}"
+
+    if not re.fullmatch(r"\+46\d{7,10}", compact):
+        raise ToolInputError(
+            "Enter a valid Swedish phone number, for example +46 70 123 45 67."
+        )
+
+    national = compact[3:]
+    groups = [national[:2]]
+    remaining = national[2:]
+    while remaining:
+        groups.append(remaining[:3] if len(remaining) % 2 == 1 else remaining[:2])
+        remaining = remaining[len(groups[-1]):]
+    return "+46 " + " ".join(groups)
+
+
+def update_customer_phone_number(
+    engine: ConsentEngine, case: DemoCase, args: dict
+) -> ToolOutcome:
+    _require_identified(case)
+    phone_number = _normalize_swedish_phone_number(args.get("phone_number"))
+    profile = case.customer_profile
+
+    if profile.phone_number == phone_number:
+        return ToolOutcome(
+            ok=True,
+            result={"phone_number": phone_number, "changed": False},
+            summary=f"The registered phone number is already {phone_number}.",
+            service="Customer profile",
+            label="Update phone number",
+            idempotent_replay=True,
+        )
+
+    profile.phone_number = phone_number
+    profile.contact_details_updated_at = _now()
+    profile.contact_details_updated_by = "Voice assistant"
+    return ToolOutcome(
+        ok=True,
+        result={
+            "phone_number": phone_number,
+            "changed": True,
+            "updated_at": profile.contact_details_updated_at.isoformat(),
+            "updated_by": profile.contact_details_updated_by,
+        },
+        summary=f"Phone number updated to {phone_number}.",
+        service="Customer profile",
+        label="Update phone number",
+    )
+
+
+# --------------------------------------------------------------------------- #
+# 4. run_credit_check  (protected: credit_check consent)
 # --------------------------------------------------------------------------- #
 def run_credit_check(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOutcome:
     _require_identified(case)
@@ -474,6 +545,7 @@ def _block_result(card, order: ReplacementOrder) -> dict:
 HANDLERS = {
     "identify_customer_with_digitald": identify_customer_with_digitald,
     "get_crm_profile": get_crm_profile,
+    "update_customer_phone_number": update_customer_phone_number,
     "run_credit_check": run_credit_check,
     "calculate_borrowing_capacity": calculate_borrowing_capacity,
     "write_advisor_summary": write_advisor_summary,

@@ -45,6 +45,29 @@ async def test_calculate_blocked_without_income(stack):
     assert not out.ok  # accepted income missing
 
 
+async def test_phone_number_update_is_validated_and_persisted(stack):
+    await _identify(stack)
+    invalid = await stack.tools.dispatch(
+        "update_customer_phone_number", {"phone_number": "123"}
+    )
+    assert not invalid.ok and invalid.result["error"] == "invalid_input"
+
+    updated = await stack.tools.dispatch(
+        "update_customer_phone_number", {"phone_number": "070-987 65 43"}
+    )
+    assert updated.ok
+    assert updated.result["phone_number"] == "+46 70 987 65 43"
+    profile = stack.repo.get().customer_profile
+    assert profile.phone_number == "+46 70 987 65 43"
+    assert profile.contact_details_updated_by == "Voice assistant"
+    assert "Update phone number" in [
+        event.display.label for event in stack.bus.history()
+    ]
+
+    await stack.reset()
+    assert stack.repo.get().customer_profile.phone_number == "+46 70 123 45 67"
+
+
 # ---- happy path --------------------------------------------------------- #
 async def test_full_mortgage_and_card_flow(stack):
     await _identify(stack)

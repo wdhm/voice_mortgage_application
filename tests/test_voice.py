@@ -159,3 +159,18 @@ async def test_call_starts_with_known_customer_profile():
         message["text"] for message in h.drain() if message.get("type") == "agent_transcript"
     )
     assert "Emma" in transcript
+
+
+async def test_simulated_call_updates_phone_after_readback_confirmation():
+    h = VoiceHarness()
+    await h.orch.start()
+    await h.orch.user_text("I want to change my phone number.")
+    await h.orch.user_text("My new number is 070 555 12 34.")
+    assert h.repo.get().customer_profile.phone_number == "+46 70 123 45 67"
+
+    await h.orch.user_text("Yes, that's correct.")
+    assert h.repo.get().customer_profile.phone_number == "+46 70 555 12 34"
+    transcript = " ".join(
+        message["text"] for message in h.drain() if message.get("type") == "agent_transcript"
+    )
+    assert "Personal information" in transcript

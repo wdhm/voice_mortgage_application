@@ -11,6 +11,7 @@ import {
   CardsView,
   CustomerMenu,
   OtherServicesView,
+  PersonalInfoView,
   type CustomerService,
 } from "./components/CustomerBanking";
 import { useEventStream } from "./lib/useEventStream";
@@ -74,6 +75,10 @@ export default function App() {
     if (cardBlocked && role === "customer") setCustomerService("cards");
   }, [cardBlocked, role]);
 
+  const phoneUpdated = events.some(
+    (e) => e.event_type === "tool.completed" && e.display.label === "Update phone number",
+  );
+
   const selectCustomerService = (service: CustomerService) => {
     setCustomerService(service);
     if (service === "mortgage") setMortgagePage("overview");
@@ -94,6 +99,12 @@ export default function App() {
             <CustomerMenu active={customerService} onSelect={selectCustomerService} />
             <section className="customer-content">
               {customerService === null && <BankingOverview onSelect={selectCustomerService} />}
+              {customerService === "profile" && (
+                <PersonalInfoView
+                  refreshKey={events.length}
+                  phoneUpdated={phoneUpdated}
+                />
+              )}
               {customerService === "cards" && <CardsView refreshKey={events.length} />}
               {customerService === "other" && <OtherServicesView />}
               {customerService === "mortgage" && mortgagePage === "overview" && (
