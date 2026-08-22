@@ -178,14 +178,34 @@ class SimulatedVoiceSession:
     async def _on_deposit(self, text: str) -> None:
         cap = await self._host.call_tool(
             "calculate_borrowing_capacity",
-            {"property_price": PROPERTY_PRICE, "deposit": DEPOSIT, "location": "Täby"},
+            {"purchasePrice": PROPERTY_PRICE, "deposit": DEPOSIT, "location": "Täby"},
         )
         if cap.ok:
-            await self._host.say(cap.summary)
+            result = cap.result
+            remaining = result["netAfterStress"]
+            if result["verdict"] == "not_affordable_at_stress_rate":
+                message = (
+                    f"At the 7 percent stress rate, the monthly budget would be short by "
+                    f"about {abs(remaining):,} kronor."
+                )
+            else:
+                message = (
+                    f"At the 7 percent stress rate, the monthly budget remains positive "
+                    f"by about {remaining:,} kronor."
+                )
+            if result["dtiFlag"] == "above_soft_guideline":
+                message += (
+                    f" Your debt-to-income ratio is {result['dtiRatio']} times, which is "
+                    "above the 4.5 times soft guideline, so I will note that for the advisor."
+                )
+            message += (
+                " This is preliminary, and a human advisor makes the final decision."
+            )
+            await self._host.say(message)
         await self._host.call_tool("write_advisor_summary")
         await self._host.say(
-            "The numbers look like they hold for a preliminary assessment — but this is illustrative, "
-            "and a Bank Alfa advisor still makes the final decision. Shall I find you a time to meet an advisor?"
+            "Your assessment is ready for bank review. After you review it, continue to "
+            "the appointment step and tell me when you are available."
         )
         slots = await self._host.call_tool("get_available_meeting_times", {"earliest_date": NEAR_DATE})
         if slots.ok:

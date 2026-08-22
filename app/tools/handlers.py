@@ -176,6 +176,9 @@ def update_customer_phone_number(
 # --------------------------------------------------------------------------- #
 def run_credit_check(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOutcome:
     _require_identified(case)
+    customer_id = args.get("customerId") or args.get("customer_id")
+    if customer_id != case.customer_profile.customer_id:
+        raise ToolInputError("customerId must match the identified customer.")
     if case.credit_result is not None:
         return ToolOutcome(
             ok=True,
@@ -214,13 +217,17 @@ def run_credit_check(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolO
 
 def _credit_result_dict(r: CreditResult) -> dict:
     return {
-        "score": r.score,
-        "max_score": r.max_score,
-        "risk_band": r.risk_band,
-        "existing_debt_balance": r.existing_debt_balance,
-        "existing_debt_payment": r.existing_debt_payment,
-        "defaults": r.defaults,
-        "source": r.source,
+        "creditScore": r.score,
+        "maxScore": r.max_score,
+        "riskBand": r.risk_band,
+        "paymentRemarks": [] if r.defaults == "none" else [r.defaults],
+        "existingCommitments": [
+            {
+                "type": "car_loan",
+                "balance": r.existing_debt_balance,
+                "monthlyPayment": r.existing_debt_payment,
+            }
+        ],
     }
 
 
@@ -239,7 +246,7 @@ def calculate_borrowing_capacity(engine: ConsentEngine, case: DemoCase, args: di
             "A credit result is required before calculating capacity.",
             label="Blocked: credit result required",
         )
-    price = _as_int(args.get("property_price"), "property_price")
+    price = _as_int(args.get("purchasePrice", args.get("property_price")), "purchasePrice")
     deposit = _as_int(args.get("deposit"), "deposit")
     if deposit > price:
         raise ToolInputError("Deposit cannot exceed the property price.")
@@ -268,14 +275,24 @@ def calculate_borrowing_capacity(engine: ConsentEngine, case: DemoCase, args: di
         calculated_at=_now(),
     )
     case.outcome = comp.outcome
-    surplus = comp.metrics["kalp_surplus_monthly"]
     return ToolOutcome(
         ok=True,
-        result={"metrics": comp.metrics, "outcome": comp.outcome.value},
+        result={
+            "requestedMortgage": comp.metrics["requested_mortgage"],
+            "ltv": comp.metrics["ltv"],
+            "amortizationTier": comp.metrics["amortization_tier"],
+            "stressTestRate": comp.metrics["stress_test_rate"],
+            "monthlyStressedPayment": comp.metrics["monthly_stressed_payment"],
+            "netAfterStress": comp.metrics["net_after_stress"],
+            "dtiRatio": comp.metrics["dti_ratio"],
+            "dtiFlag": comp.metrics["dti_flag"],
+            "verdict": comp.metrics["verdict"],
+        },
         summary=(
-            f"Preliminary and illustrative: monthly surplus about SEK {surplus:,} "
-            f"(LTV {comp.metrics['ltv_pct']}%, debt ratio {comp.metrics['debt_ratio']}x). "
-            "This is not a final decision."
+            f"At a 7% stress rate, the monthly amount remaining is about SEK "
+            f"{comp.metrics['net_after_stress']:,}. "
+            f"Debt-to-income is {comp.metrics['dti_ratio']}x. "
+            "This is preliminary; a human advisor makes the final decision."
         ),
         service="Affordability engine",
         label="Calculate borrowing capacity",
@@ -296,6 +313,9 @@ def _as_int(value, name: str) -> int:
 # --------------------------------------------------------------------------- #
 def write_advisor_summary(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOutcome:
     _require_identified(case)
+    case_id = args.get("caseId") or args.get("case_id")
+    if case_id != case.case_id:
+        raise ToolInputError("caseId must match the active mortgage case.")
     if not (case.accepted_income and case.credit_result and case.capacity_result):
         raise GuardError(
             "Income, credit result and capacity result are all required.",
@@ -303,6 +323,18 @@ def write_advisor_summary(engine: ConsentEngine, case: DemoCase, args: dict) -> 
         )
     inc = case.accepted_income
     cap = case.capacity_result
+    dti_flagged = cap.metrics.get("dti_flag") == "above_soft_guideline"
+    flags = ["dti_above_guideline"] if dti_flagged else []
+    recommended_action = "advisor_review" if dti_flagged else "standard_review"
+    verdict = cap.metrics.get("verdict")
+    summary_text = (
+        "Affordable under the 7% stress test"
+        if verdict != "not_affordable_at_stress_rate"
+        else "Not affordable under the 7% stress test"
+    )
+    if dti_flagged:
+        summary_text += f"; DTI {cap.metrics['dti_ratio']}x is above the 4.5x soft guideline"
+    summary_text += ". Human advisor decision required."
     sections = {
         "identity": {
             "customer": case.customer_profile.display_name,
@@ -324,9 +356,14 @@ def write_advisor_summary(engine: ConsentEngine, case: DemoCase, args: dict) -> 
     positive = cap.outcome.name == "preliminary_positive"
     summary_model = AdvisorSummary(
         sections=sections,
+        summary=summary_text,
+        flags=flags,
+        recommended_action=recommended_action,
         final_decision_required=True,
         status_text=(
-            "Preliminary assessment: looks supportable"
+            "Preliminary assessment: affordable with advisor note"
+            if dti_flagged and positive
+            else "Preliminary assessment: affordable at stress rate"
             if positive
             else "Preliminary assessment: needs advisor attention"
         ),
@@ -337,10 +374,9 @@ def write_advisor_summary(engine: ConsentEngine, case: DemoCase, args: dict) -> 
     return ToolOutcome(
         ok=True,
         result={
-            "status_text": summary_model.status_text,
-            "decision_text": summary_model.decision_text,
-            "final_decision_required": True,
-            "sections": list(sections.keys()),
+            "summary": summary_model.summary,
+            "flags": summary_model.flags,
+            "recommendedAction": summary_model.recommended_action,
         },
         summary="Advisor summary prepared. Final decision requires a Bank Alfa advisor.",
         service="Advisor handoff",

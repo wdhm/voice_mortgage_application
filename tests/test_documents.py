@@ -82,6 +82,42 @@ async def test_uploading_bundled_payslip_pdf_auto_accepts(d):
     assert case.accepted_income.net_salary_monthly == 62_400
 
 
+async def test_remove_clears_document_and_extracted_income(d):
+    await d.analyze_sample("high_confidence")
+
+    case = await d.docs.remove()
+
+    assert case.document_state is DocumentState.empty
+    assert case.uploaded_document is None
+    assert case.extracted_income is None
+    assert case.accepted_income is None
+    assert case.review_record is None
+
+
+def test_foundry_maps_typed_number_and_date_values():
+    from app.documents.foundry import FoundryDocumentAnalyzer
+
+    fields = FoundryDocumentAnalyzer()._map_fields(
+        {
+            "result": {
+                "contents": [
+                    {
+                        "fields": {
+                            "gross_salary_monthly": {"valueNumber": 58_000, "confidence": 0.98},
+                            "pay_date": {"valueDate": "2026-08-25", "confidence": 0.99},
+                        }
+                    }
+                ]
+            }
+        }
+    )
+
+    assert fields["gross_salary_monthly"].value == "58000"
+    assert fields["gross_salary_monthly"].normalized_value == 58_000
+    assert fields["pay_date"].value == "2026-08-25"
+    assert fields["pay_date"].normalized_value == "2026-08-25"
+
+
 async def test_review_edit_retains_original_and_sets_provenance(d):
     await d.analyze_sample("low_confidence")
     case = await d.docs.review_edit("net_salary_monthly", "62 400 kr")
@@ -142,11 +178,13 @@ async def test_accepted_income_feeds_golden_calc(d):
     await d.tools.dispatch("identify_customer_with_digitald", {"approval_token": "demo-token"})
     rec = await d.tools.request_consent(ConsentAction.credit_check)
     await d.tools.resolve_consent(rec.consent_id, "yes, go ahead")
-    await d.tools.dispatch("run_credit_check", {})
+    await d.tools.dispatch(
+        "run_credit_check", {"customerId": d.repo.get().customer_profile.customer_id}
+    )
     cap = await d.tools.dispatch(
-        "calculate_borrowing_capacity", {"property_price": 7_000_000, "deposit": 1_750_000}
+        "calculate_borrowing_capacity", {"purchasePrice": 7_000_000, "deposit": 1_750_000}
     )
     assert cap.ok
-    assert cap.result["metrics"]["kalp_surplus_monthly"] == 5_138
-    assert cap.result["outcome"] == "preliminary_positive"
+    assert cap.result["netAfterStress"] == 15_575
+    assert cap.result["dtiFlag"] == "above_soft_guideline"
     assert d.repo.get().identity_status is IdentityStatus.identified

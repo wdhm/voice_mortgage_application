@@ -37,6 +37,13 @@ def test_golden_kalp_and_outcome():
     comp = compute_capacity(EMMA)
     assert comp.metrics["kalp_surplus_monthly"] == 5_138
     assert comp.outcome is CaseOutcome.preliminary_positive
+    assert comp.metrics["amortization_tier"] == "2%"
+    assert comp.metrics["stress_test_rate"] == 0.07
+    assert comp.metrics["monthly_stressed_payment"] == 30_625
+    assert comp.metrics["net_after_stress"] == 15_575
+    assert comp.metrics["dti_ratio"] == 4.71
+    assert comp.metrics["dti_flag"] == "above_soft_guideline"
+    assert comp.metrics["verdict"] == "affordable_with_note"
 
 
 def test_negative_surplus_flips_outcome():
@@ -55,3 +62,21 @@ def test_calculation_is_pure_and_repeatable():
     a = compute_capacity(EMMA).metrics
     b = compute_capacity(EMMA).metrics
     assert a == b
+
+
+def test_price_and_deposit_change_dti_and_clear_flag():
+    lower_loan = CapacityInputs(
+        property_price=4_000_000,
+        deposit=2_000_000,
+        gross_income_monthly=96_000,
+        net_income_monthly=62_400,
+        existing_debt_balance=180_000,
+        existing_debt_payment_monthly=4_200,
+    )
+
+    result = compute_capacity(lower_loan).metrics
+
+    assert result["requested_mortgage"] == 2_000_000
+    assert result["dti_ratio"] == 1.89
+    assert result["dti_flag"] == "within_guideline"
+    assert result["verdict"] == "affordable"

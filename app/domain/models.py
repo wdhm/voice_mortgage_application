@@ -203,6 +203,9 @@ class ReplacementOrder(BaseModel):
 
 class AdvisorSummary(BaseModel):
     sections: dict = Field(default_factory=dict)
+    summary: str = ""
+    flags: list[str] = Field(default_factory=list)
+    recommended_action: str = "standard_review"
     final_decision_required: bool = True
     status_text: str = "Preliminary assessment: looks supportable"
     decision_text: str = "Final decision: advisor required"

@@ -54,7 +54,15 @@ function Kalp({ k, v, plus }: { k: string; v: string; plus?: boolean }) {
  * Screen 3 — the advisor handoff. Server-owned status text; never renders
  * "Approved" for the mortgage. Re-fetches the case whenever the timeline advances.
  */
-export function SummaryPanel({ refreshKey }: { refreshKey: number }) {
+export function SummaryPanel({
+  refreshKey,
+  audience = "advisor",
+  onContinue,
+}: {
+  refreshKey: number;
+  audience?: "customer" | "advisor";
+  onContinue?: () => void;
+}) {
   const [c, setC] = useState<DemoCaseView | null>(null);
 
   useEffect(() => {
@@ -78,9 +86,50 @@ export function SummaryPanel({ refreshKey }: { refreshKey: number }) {
   const sec = s.sections;
   const loan = (sec.requested_loan ?? {}) as Record<string, number | string>;
   const credit = (sec.credit_result ?? {}) as Record<string, number | string>;
+  const commitments = Array.isArray(sec.credit_result?.existingCommitments)
+    ? sec.credit_result.existingCommitments
+    : [];
+  const carLoan = (commitments[0] ?? {}) as Record<string, number | string>;
   const m = sec.capacity_metrics;
   const card = c.cards[0];
-  const positive = s.status_text.toLowerCase().includes("supportable");
+  const flagged = s.flags.includes("dti_above_guideline");
+
+  if (audience === "customer") {
+    return (
+      <div className="customer-review-panel">
+        <div className="customer-review-status">
+          <span aria-hidden>✓</span>
+          <div>
+            <p className="eyebrow">Case package prepared</p>
+            <h2>Ready for bank review</h2>
+            <p>Your verified income and affordability assessment have been sent to a mortgage advisor.</p>
+          </div>
+        </div>
+        <div className="customer-review-steps">
+          <div><span>✓</span><div><strong>Income verified</strong><small>Payslip details accepted</small></div></div>
+          <div><span>✓</span><div><strong>Affordability assessed</strong><small>7% stress test completed</small></div></div>
+          <div className={flagged ? "note" : ""}>
+            <span>{flagged ? "!" : "✓"}</span>
+            <div>
+              <strong>{flagged ? "Advisor note included" : "Within DTI guideline"}</strong>
+              <small>{flagged ? "The advisor will review the debt-to-income ratio" : "No DTI exception was flagged"}</small>
+            </div>
+          </div>
+        </div>
+        <p className="handoff-note">
+          This is not a final lending decision. A Bank Alfa advisor reviews the application.
+        </p>
+        {onContinue && (
+          <div className="journey-next">
+            <span>Next, arrange a time to speak with your mortgage advisor.</span>
+            <button type="button" className="icon-btn primary" onClick={onContinue}>
+              Continue to appointment →
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="summary-panel">
@@ -89,7 +138,7 @@ export function SummaryPanel({ refreshKey }: { refreshKey: number }) {
         <span className="mode">Human handoff</span>
       </div>
 
-      <div className={`status-banner ${positive ? "ok" : "warn"}`}>
+      <div className={`status-banner ${flagged ? "warn" : "ok"}`}>
         <strong>{s.status_text}</strong>
         <span>{s.decision_text}</span>
       </div>
@@ -114,15 +163,15 @@ export function SummaryPanel({ refreshKey }: { refreshKey: number }) {
           <Row k="Deposit" v={kr(loan.deposit as number)} />
           <Row k="Requested mortgage" v={kr(m?.requested_mortgage)} strong />
           <Row k="Loan-to-value" v={m ? `${m.ltv_pct}%` : "—"} />
-          <Row k="Debt ratio" v={m ? `${m.debt_ratio}×` : "—"} />
+          <Row k="Debt-to-income" v={m ? `${m.dti_ratio}×` : "—"} />
         </Section>
 
         <Section title="Credit & existing debt">
-          <Row k="Credit score" v={credit.score != null ? `${credit.score} / ${credit.max_score}` : "—"} />
-          <Row k="Risk band" v={(credit.risk_band as string) ?? "—"} />
-          <Row k="Existing car loan" v={kr(credit.existing_debt_balance as number)} />
-          <Row k="Car loan payment" v={kr(credit.existing_debt_payment as number)} />
-          <Row k="Defaults" v={(credit.defaults as string) ?? "—"} />
+          <Row k="Credit score" v={credit.creditScore != null ? `${credit.creditScore} / ${credit.maxScore}` : "—"} />
+          <Row k="Risk band" v={(credit.riskBand as string) ?? "—"} />
+          <Row k="Existing car loan" v={kr(carLoan.balance as number)} />
+          <Row k="Car loan payment" v={kr(carLoan.monthlyPayment as number)} />
+          <Row k="Payment remarks" v={Array.isArray(credit.paymentRemarks) && credit.paymentRemarks.length ? credit.paymentRemarks.join(", ") : "None"} />
         </Section>
 
         {m && (
@@ -164,6 +213,14 @@ export function SummaryPanel({ refreshKey }: { refreshKey: number }) {
       <p className="handoff-note">
         This is a preliminary, illustrative assessment. A Bank Alfa advisor owns the final lending decision.
       </p>
+      {onContinue && (
+        <div className="journey-next">
+          <span>Continue to arrange the advisor appointment.</span>
+          <button type="button" className="icon-btn primary" onClick={onContinue}>
+            Continue to appointment →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

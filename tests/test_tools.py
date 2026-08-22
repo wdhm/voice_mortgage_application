@@ -30,15 +30,21 @@ async def test_crm_blocked_before_identify(stack):
 
 async def test_credit_blocked_without_consent(stack):
     await _identify(stack)
-    out = await stack.tools.dispatch("run_credit_check", {})
+    out = await stack.tools.dispatch(
+        "run_credit_check", {"customerId": stack.repo.get().customer_profile.customer_id}
+    )
     assert not out.ok and out.result["error"] == "consent_required"
+    assert out.result["code"] == "blocked:missing_consent"
     assert stack.repo.get().credit_result is None
+    assert stack.bus.history()[-1].display.label == "blocked:missing_consent"
 
 
 async def test_calculate_blocked_without_income(stack):
     await _identify(stack)
     await _grant(stack, ConsentAction.credit_check)
-    await stack.tools.dispatch("run_credit_check", {})
+    await stack.tools.dispatch(
+        "run_credit_check", {"customerId": stack.repo.get().customer_profile.customer_id}
+    )
     out = await stack.tools.dispatch(
         "calculate_borrowing_capacity", {"property_price": 7_000_000, "deposit": 1_750_000}
     )
@@ -81,27 +87,37 @@ async def test_full_mortgage_and_card_flow(stack):
     stack.repo.set(case)
 
     await _grant(stack, ConsentAction.credit_check)
-    credit = await stack.tools.dispatch("run_credit_check", {})
-    assert credit.ok and credit.result["score"] == 781
+    credit = await stack.tools.dispatch(
+        "run_credit_check", {"customerId": stack.repo.get().customer_profile.customer_id}
+    )
+    assert credit.ok and credit.result["creditScore"] == 781
+    assert credit.result["paymentRemarks"] == []
+    assert credit.result["existingCommitments"][0]["monthlyPayment"] == 4_200
     assert credit.consent_consumed is not None
 
     # Second credit check is idempotent and needs no new consent.
-    again = await stack.tools.dispatch("run_credit_check", {})
+    again = await stack.tools.dispatch(
+        "run_credit_check", {"customerId": stack.repo.get().customer_profile.customer_id}
+    )
     assert again.ok and again.idempotent_replay
 
     cap = await stack.tools.dispatch(
         "calculate_borrowing_capacity",
-        {"property_price": 7_000_000, "deposit": 1_750_000, "location": "Täby"},
+        {"purchasePrice": 7_000_000, "deposit": 1_750_000, "location": "Täby"},
     )
     assert cap.ok
-    assert cap.result["metrics"]["kalp_surplus_monthly"] == 5_138
-    assert cap.result["outcome"] == "preliminary_positive"
+    assert cap.result["netAfterStress"] == 15_575
+    assert cap.result["dtiRatio"] == 4.71
+    assert cap.result["dtiFlag"] == "above_soft_guideline"
+    assert cap.result["verdict"] == "affordable_with_note"
 
-    summary = await stack.tools.dispatch("write_advisor_summary", {})
+    summary = await stack.tools.dispatch(
+        "write_advisor_summary", {"caseId": stack.repo.get().case_id}
+    )
     assert summary.ok
-    assert "supportable" in summary.result["status_text"].lower()
-    assert "approv" not in summary.result["status_text"].lower()
-    assert summary.result["final_decision_required"] is True
+    assert summary.result["flags"] == ["dti_above_guideline"]
+    assert summary.result["recommendedAction"] == "advisor_review"
+    assert "approv" not in summary.result["summary"].lower()
 
     # Meeting: first near-term availability, then after 3-week reschedule.
     near = await stack.tools.dispatch(
@@ -167,5 +183,29 @@ async def test_reset_discards_consent(stack):
     await stack.reset()
     # New epoch/case: known demo identity remains, consent is gone.
     assert stack.repo.get().identity_status is IdentityStatus.identified
-    out = await stack.tools.dispatch("run_credit_check", {})
+    out = await stack.tools.dispatch(
+        "run_credit_check", {"customerId": stack.repo.get().customer_profile.customer_id}
+    )
     assert not out.ok
+
+
+async def test_within_guideline_clears_summary_flag(stack):
+    await _identify(stack)
+    case = stack.repo.get()
+    apply_accepted_income_emma(case)
+    stack.repo.set(case)
+    await _grant(stack, ConsentAction.credit_check)
+    await stack.tools.dispatch(
+        "run_credit_check", {"customerId": stack.repo.get().customer_profile.customer_id}
+    )
+    cap = await stack.tools.dispatch(
+        "calculate_borrowing_capacity",
+        {"purchasePrice": 4_000_000, "deposit": 2_000_000},
+    )
+    summary = await stack.tools.dispatch(
+        "write_advisor_summary", {"caseId": stack.repo.get().case_id}
+    )
+
+    assert cap.result["dtiFlag"] == "within_guideline"
+    assert summary.result["flags"] == []
+    assert summary.result["recommendedAction"] == "standard_review"

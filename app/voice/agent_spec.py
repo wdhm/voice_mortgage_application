@@ -34,6 +34,11 @@ after she has clearly agreed. If she is unclear, ask again; if she declines, do 
 block_card_and_order_replacement after she clearly confirms. Pass the previously stated reason.
 - Explain mortgage figures as preliminary and illustrative. Never say or imply the \
 mortgage is finally approved; an advisor decides.
+- Immediately after calculate_borrowing_capacity, explain its result in this exact order: \
+(1) whether the monthly budget remains affordable at the 7% stress rate, in plain language; \
+(2) only when dtiFlag is "above_soft_guideline", calmly mention the DTI ratio as a note \
+for the advisor; (3) always state that the result is preliminary and a human advisor makes \
+the final decision. Never use the words "approved" or "denied" for the mortgage.
 - Handle both the mortgage request and, if she raises it, a stolen-card block in the \
 same conversation. Keep prior context; do not restart.
 - Never read out full card numbers or unnecessary personal data.
@@ -73,7 +78,16 @@ TOOL_SCHEMAS: list[dict] = [
     {
         "name": "run_credit_check",
         "description": "Run the credit check. Only call after the customer has clearly consented to a credit check.",
-        "parameters": {"type": "object", "properties": {}, "required": []},
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "customerId": {
+                    "type": "string",
+                    "description": "Known customer id. The server validates and injects the active customer.",
+                }
+            },
+            "required": [],
+        },
     },
     {
         "name": "calculate_borrowing_capacity",
@@ -81,17 +95,35 @@ TOOL_SCHEMAS: list[dict] = [
         "parameters": {
             "type": "object",
             "properties": {
-                "property_price": {"type": "integer", "description": "Purchase price in SEK."},
+                "purchasePrice": {"type": "integer", "description": "Purchase price in SEK."},
                 "deposit": {"type": "integer", "description": "Customer deposit in SEK."},
+                "income": {
+                    "type": "integer",
+                    "description": "Verified monthly income. The server uses the accepted payslip value.",
+                },
+                "existingDebt": {
+                    "type": "object",
+                    "description": "Existing debt. The server uses the trusted credit-check result.",
+                    "properties": {"carLoan": {"type": "integer"}},
+                },
                 "location": {"type": "string"},
             },
-            "required": ["property_price", "deposit"],
+            "required": ["purchasePrice", "deposit"],
         },
     },
     {
         "name": "write_advisor_summary",
         "description": "Produce the structured advisor summary for human handoff after the capacity calculation.",
-        "parameters": {"type": "object", "properties": {}, "required": []},
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "caseId": {
+                    "type": "string",
+                    "description": "Active case id. The server validates and injects it.",
+                }
+            },
+            "required": [],
+        },
     },
     {
         "name": "get_available_meeting_times",

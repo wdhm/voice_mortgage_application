@@ -16,6 +16,7 @@ from datetime import UTC, date, datetime
 
 from ..domain.models import (
     AcceptedIncome,
+    CaseOutcome,
     DemoCase,
     DocumentState,
     ExtractedIncome,
@@ -250,6 +251,26 @@ class DocumentService:
         await self._bus.emit(
             event_type="document.rejected", label="Reviewer rejected document",
             status=EventStatus.blocked, service="Document review",
+        )
+        return self._repo.get()
+
+    async def remove(self) -> DemoCase:
+        async with self._lock:
+            case = self._repo.get()
+            case.uploaded_document = None
+            case.extracted_income = None
+            case.accepted_income = None
+            case.review_record = None
+            case.document_state = DocumentState.empty
+            case.capacity_result = None
+            case.advisor_summary = None
+            case.outcome = CaseOutcome.open
+            self._repo.set(case)
+        await self._bus.emit(
+            event_type="document.removed",
+            label="Customer removed payslip",
+            status=EventStatus.info,
+            service="Document analysis",
         )
         return self._repo.get()
 
