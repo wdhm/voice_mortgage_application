@@ -247,7 +247,22 @@ export interface CaseCard {
 
 export interface DemoCaseView {
   identity_status: IdentityStatus;
-  customer_profile: { display_name: string; existing_products?: string[] } & Record<string, unknown>;
+  customer_profile: {
+    customer_id: string;
+    customer_number: string;
+    display_name: string;
+    phone_number: string;
+    email: string;
+    street_address: string;
+    postal_code: string;
+    city: string;
+    country: string;
+    preferred_language: string;
+    customer_since: string;
+    contact_details_updated_at: string | null;
+    contact_details_updated_by: string | null;
+    existing_products?: string[];
+  } & Record<string, unknown>;
   credit_result: { score?: number; band?: string } & Record<string, unknown> | null;
   booked_meeting:
     | { slot: { slot_id: string; start: string; advisor: string }; booking_reference: string; purpose: string }

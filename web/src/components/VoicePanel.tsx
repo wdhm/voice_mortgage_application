@@ -7,7 +7,15 @@ const ACTION_LABELS: Record<string, string> = {
   block_card: "block the card and order a replacement",
 };
 
-export function VoicePanel({ v }: { v: VoiceStreamState }) {
+export function VoicePanel({
+  v,
+  title = "Advisor call",
+  description = "Talk to your Bank Alfa advisor. Every credit action is carried out only after you confirm it out loud.",
+}: {
+  v: VoiceStreamState;
+  title?: string;
+  description?: string;
+}) {
   const logRef = useRef<HTMLDivElement | null>(null);
   const [voiceOn, setVoiceOn] = useState(isSpeechEnabled());
 
@@ -29,7 +37,7 @@ export function VoicePanel({ v }: { v: VoiceStreamState }) {
   return (
     <div className="voice-panel">
       <div className="voice-head">
-        <h2>Advisor call</h2>
+        <h2>{title}</h2>
         <div className="voice-head-meta">
           <button
             type="button"
@@ -45,10 +53,7 @@ export function VoicePanel({ v }: { v: VoiceStreamState }) {
           </span>
         </div>
       </div>
-      <p className="doc-sub">
-        Talk to your Bank Alfa advisor. Every credit action is carried out only after you
-        confirm it out loud.
-      </p>
+      <p className="doc-sub">{description}</p>
 
       {v.conn === "reconnecting" && (
         <div className="reconnecting" role="status">

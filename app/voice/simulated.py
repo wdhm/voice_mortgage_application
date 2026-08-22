@@ -10,6 +10,7 @@ for real even in simulation.
 """
 from __future__ import annotations
 
+import re
 from enum import Enum, auto
 
 from ..domain.fixtures import MASTERCARD_ID
@@ -26,6 +27,8 @@ CANONICAL_SLOT = "slot-2026-09-21-1500"  # Monday 21 September 2026, 15:00
 
 class Phase(Enum):
     AWAIT_MORTGAGE = auto()
+    AWAIT_PHONE_NUMBER = auto()
+    AWAIT_PHONE_CONFIRMATION = auto()
     AWAIT_CREDIT_CONSENT = auto()
     AWAIT_DEPOSIT = auto()
     AWAIT_MEETING = auto()
@@ -40,12 +43,29 @@ def _mentions_reschedule(text: str) -> bool:
     return any(k in t for k in ("away", "week", "after that", "later", "another time"))
 
 
+def _mentions_phone_update(text: str) -> bool:
+    lowered = text.lower()
+    return "phone" in lowered or "mobile" in lowered or "telephone" in lowered
+
+
+def _extract_phone_number(text: str) -> str | None:
+    match = re.search(r"(?:\+46|0046|0)(?:[\s().-]*\d){7,10}", text)
+    return match.group(0).strip() if match else None
+
+
+def _is_affirmative(text: str) -> bool:
+    lowered = text.strip().lower()
+    return any(word in lowered for word in ("yes", "correct", "confirm", "that's right", "go ahead"))
+
+
 class SimulatedVoiceSession:
     provider = "simulated"
 
     def __init__(self, host: ConversationHost) -> None:
         self._host = host
         self._phase = Phase.AWAIT_MORTGAGE
+        self._phone_candidate: str | None = None
+        self._return_phase = Phase.AWAIT_MORTGAGE
 
     async def start(self) -> None:
         profile = await self._host.call_tool("get_crm_profile")
@@ -69,8 +89,17 @@ class SimulatedVoiceSession:
     async def on_user_text(self, text: str) -> None:
         # Echo the customer's turn AND resolve any pending consent server-side first.
         await self._host.user_said(text)
+        if _mentions_phone_update(text) and self._phase not in {
+            Phase.AWAIT_PHONE_NUMBER,
+            Phase.AWAIT_PHONE_CONFIRMATION,
+        }:
+            self._return_phase = self._phase
+            await self._begin_phone_update(text)
+            return
         handler = {
             Phase.AWAIT_MORTGAGE: self._on_mortgage,
+            Phase.AWAIT_PHONE_NUMBER: self._on_phone_number,
+            Phase.AWAIT_PHONE_CONFIRMATION: self._on_phone_confirmation,
             Phase.AWAIT_CREDIT_CONSENT: self._on_credit_consent,
             Phase.AWAIT_DEPOSIT: self._on_deposit,
             Phase.AWAIT_MEETING: self._on_meeting,
@@ -82,6 +111,47 @@ class SimulatedVoiceSession:
         await handler(text)
 
     # ---- phase handlers -------------------------------------------------- #
+    async def _begin_phone_update(self, text: str) -> None:
+        candidate = _extract_phone_number(text)
+        if candidate:
+            self._phone_candidate = candidate
+            await self._host.say(
+                f"I heard your new phone number as {candidate}. Is that correct?"
+            )
+            self._phase = Phase.AWAIT_PHONE_CONFIRMATION
+            return
+        await self._host.say("Of course. What is the new phone number you would like to register?")
+        self._phase = Phase.AWAIT_PHONE_NUMBER
+
+    async def _on_phone_number(self, text: str) -> None:
+        candidate = _extract_phone_number(text)
+        if not candidate:
+            await self._host.say(
+                "I didn't catch a complete Swedish phone number. Please say the full number again."
+            )
+            return
+        self._phone_candidate = candidate
+        await self._host.say(f"I heard {candidate}. Is that the number you want me to save?")
+        self._phase = Phase.AWAIT_PHONE_CONFIRMATION
+
+    async def _on_phone_confirmation(self, text: str) -> None:
+        if not _is_affirmative(text):
+            self._phone_candidate = None
+            await self._host.say("No problem. Please tell me the phone number again.")
+            self._phase = Phase.AWAIT_PHONE_NUMBER
+            return
+        out = await self._host.call_tool(
+            "update_customer_phone_number", {"phone_number": self._phone_candidate}
+        )
+        if out.ok:
+            await self._host.say(
+                f"Done. {out.summary} You can see the updated number in Personal information."
+            )
+            self._phase = self._return_phase
+            return
+        await self._host.say(f"I couldn't update it. {out.summary} Please say the number again.")
+        self._phase = Phase.AWAIT_PHONE_NUMBER
+
     async def _on_mortgage(self, text: str) -> None:
         await self._host.say(
             "Great — a mortgage pre-approval for Täby. Good news: your income is already "

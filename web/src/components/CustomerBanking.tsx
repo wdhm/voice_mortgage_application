@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getCase, type CaseCard, type DemoCaseView } from "../lib/api";
 
-export type CustomerService = "cards" | "mortgage" | "other";
+export type CustomerService = "profile" | "cards" | "mortgage" | "other";
 
 const SERVICES: Array<{
   id: CustomerService;
@@ -9,6 +9,12 @@ const SERVICES: Array<{
   description: string;
   icon: string;
 }> = [
+  {
+    id: "profile",
+    title: "Personal information",
+    description: "Contact details, address and preferences",
+    icon: "●",
+  },
   {
     id: "cards",
     title: "Cards",
@@ -54,7 +60,6 @@ export function CustomerMenu({
           <span>Personal customer</span>
         </div>
       </div>
-      <p className="menu-label">What would you like to do?</p>
       <nav aria-label="Banking services">
         {SERVICES.map((service) => (
           <button
@@ -69,11 +74,88 @@ export function CustomerMenu({
               <strong>{service.title}</strong>
               <small>{service.description}</small>
             </span>
-            <span className="menu-arrow" aria-hidden>›</span>
           </button>
         ))}
       </nav>
     </aside>
+  );
+}
+
+export function PersonalInfoView({
+  refreshKey,
+  phoneUpdated,
+}: {
+  refreshKey: number;
+  phoneUpdated: boolean;
+}) {
+  const [demoCase, setDemoCase] = useState<DemoCaseView | null>(null);
+
+  useEffect(() => {
+    getCase().then(setDemoCase).catch(() => {});
+  }, [refreshKey]);
+
+  const profile = demoCase?.customer_profile;
+  const updatedAt = profile?.contact_details_updated_at
+    ? new Intl.DateTimeFormat("en-GB", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(profile.contact_details_updated_at))
+    : null;
+
+  return (
+    <div className="service-page personal-info-page">
+      <p className="eyebrow">Personal information</p>
+      <h1>Your details</h1>
+      <p className="service-intro">
+        Review the information Bank Alfa uses to contact you and provide your services.
+      </p>
+
+      {phoneUpdated && (
+        <div className="profile-update-banner" role="status">
+          <span aria-hidden>✓</span>
+          <div>
+            <strong>Phone number updated</strong>
+            <p>The voice assistant saved your confirmed number to your customer profile.</p>
+          </div>
+        </div>
+      )}
+
+      <section className="profile-details-card" aria-label="Emma's personal details">
+        <div className="profile-card-heading">
+          <span className="profile-large-avatar" aria-hidden>EL</span>
+          <div>
+            <h2>{profile?.display_name ?? "Emma Lindberg"}</h2>
+            <span>Personal customer</span>
+          </div>
+        </div>
+        <dl className="profile-detail-list">
+          <div>
+            <dt>Phone number</dt>
+            <dd className={phoneUpdated ? "recently-updated" : ""}>
+              {profile?.phone_number ?? "Loading…"}
+              {updatedAt && <small>Updated {updatedAt} by {profile?.contact_details_updated_by}</small>}
+            </dd>
+          </div>
+          <div><dt>Email</dt><dd>{profile?.email ?? "Loading…"}</dd></div>
+          <div>
+            <dt>Home address</dt>
+            <dd>
+              {profile
+                ? <>{profile.street_address}<br />{profile.postal_code} {profile.city}<br />{profile.country}</>
+                : "Loading…"}
+            </dd>
+          </div>
+          <div><dt>Preferred language</dt><dd>{profile?.preferred_language ?? "Loading…"}</dd></div>
+          <div>
+            <dt>Customer since</dt>
+            <dd>{profile ? new Date(profile.customer_since).getFullYear() : "Loading…"}</dd>
+          </div>
+          <div><dt>Customer number</dt><dd>{profile?.customer_number ?? "Loading…"}</dd></div>
+        </dl>
+      </section>
+    </div>
   );
 }
 
