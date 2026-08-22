@@ -49,6 +49,10 @@ class AppState:
         self.last_document_bytes = content
         self.last_document_content_type = content_type or "application/octet-stream"
 
+    def forget_document(self) -> None:
+        self.last_document_bytes = None
+        self.last_document_content_type = None
+
     async def reset(self) -> None:
         """Reset the case (new epoch) and clear the timeline, then emit a reset event."""
         await self.voice.stop()

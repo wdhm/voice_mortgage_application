@@ -85,6 +85,28 @@ def compute_capacity(inp: CapacityInputs) -> CapacityComputation:
     )
     kalp_surplus_monthly = inp.net_income_monthly - total_monthly_costs
 
+    # Customer-facing preliminary stress view. DTI includes the existing car-loan
+    # balance so the ratio reflects total debt, not only the requested mortgage.
+    amortization_tier = "2%" if ltv > 0.70 else "1%" if ltv > 0.50 else "0%"
+    stress_test_rate = 0.07
+    monthly_stressed_payment = _round_half_up(requested_mortgage * stress_test_rate / m)
+    living_cost_estimate = 12_000
+    net_after_stress = (
+        inp.net_income_monthly
+        - monthly_stressed_payment
+        - inp.existing_debt_payment_monthly
+        - living_cost_estimate
+    )
+    dti_ratio = round(total_debt / annual_gross_income, 2)
+    dti_flag = "above_soft_guideline" if dti_ratio > 4.5 else "within_guideline"
+    verdict = (
+        "not_affordable_at_stress_rate"
+        if net_after_stress <= 0
+        else "affordable_with_note"
+        if dti_flag == "above_soft_guideline"
+        else "affordable"
+    )
+
     outcome = (
         CaseOutcome.preliminary_positive
         if kalp_surplus_monthly > 0
@@ -109,6 +131,14 @@ def compute_capacity(inp: CapacityInputs) -> CapacityComputation:
         "existing_debt_payment_monthly": inp.existing_debt_payment_monthly,
         "total_monthly_costs": total_monthly_costs,
         "kalp_surplus_monthly": kalp_surplus_monthly,
+        "amortization_tier": amortization_tier,
+        "stress_test_rate": stress_test_rate,
+        "monthly_stressed_payment": monthly_stressed_payment,
+        "living_cost_estimate": living_cost_estimate,
+        "net_after_stress": net_after_stress,
+        "dti_ratio": dti_ratio,
+        "dti_flag": dti_flag,
+        "verdict": verdict,
     }
 
     return CapacityComputation(

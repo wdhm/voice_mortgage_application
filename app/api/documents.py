@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from ..documents.port import REQUIRED_FIELDS, UploadValidationError
 from ..documents.samples import SAMPLE_KEYS, SAMPLES, render_payslip_html, sample_pdf_path
 from ..documents.service import CONFIDENCE_THRESHOLD, validate_upload
+from ..domain.models import DocumentState
 from ..state import app_state
 
 router = APIRouter(prefix="/api/documents")
@@ -167,10 +168,22 @@ async def upload(file: UploadFile = File(...)) -> dict:  # noqa: B008 (FastAPI d
         validate_upload(content, file.content_type or "")
     except UploadValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    await app_state.documents.analyze(
+    case = await app_state.documents.analyze(
         content=content, content_type=file.content_type or "", filename=file.filename or "upload", sample_key=None
     )
+    if case.document_state is DocumentState.analysis_failed:
+        raise HTTPException(
+            status_code=502,
+            detail="The payslip could not be analyzed. Check the document analysis provider and try again.",
+        )
     app_state.remember_document(content, file.content_type)
+    return _projection()
+
+
+@router.delete("/upload")
+async def remove_upload() -> dict:
+    await app_state.documents.remove()
+    app_state.forget_document()
     return _projection()
 
 

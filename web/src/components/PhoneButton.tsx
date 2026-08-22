@@ -1,4 +1,5 @@
 import type { VoiceStreamState } from "../lib/useVoice";
+import { primeAudio } from "../lib/speech";
 
 export function PhoneButton({ voice }: { voice: VoiceStreamState }) {
   const active = voice.session === "active";
@@ -7,7 +8,10 @@ export function PhoneButton({ voice }: { voice: VoiceStreamState }) {
   const toggleCall = () => {
     if (unavailable) return;
     if (active) voice.stop();
-    else void voice.start();
+    else {
+      primeAudio();
+      void voice.start();
+    }
   };
 
   return (

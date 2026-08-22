@@ -85,6 +85,12 @@ async def test_full_script_reaches_all_golden_outcomes(h):
     transcript = " ".join(m["text"] for m in agent_msgs).lower()
     assert "emma" in transcript
     assert "goodbye" in transcript
+    stress = transcript.index("7 percent stress rate")
+    dti = transcript.index("debt-to-income ratio")
+    advisor = transcript.index("human advisor makes the final decision")
+    assert stress < dti < advisor
+    assert "approved" not in transcript
+    assert "denied" not in transcript
 
 
 async def test_credit_gate_blocks_without_clear_consent():
@@ -135,7 +141,9 @@ async def test_advisor_summary_contract_for_screen3(h):
     assert s.final_decision_required is True
     assert "approv" not in s.status_text.lower()
     assert "approv" not in s.decision_text.lower()
-    assert s.status_text == "Preliminary assessment: looks supportable"
+    assert s.status_text == "Preliminary assessment: affordable with advisor note"
+    assert s.flags == ["dti_above_guideline"]
+    assert s.recommended_action == "advisor_review"
     for key in (
         "identity",
         "income_provenance",

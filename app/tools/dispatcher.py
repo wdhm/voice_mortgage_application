@@ -120,11 +120,14 @@ class ToolDispatcher:
             try:
                 outcome = handler(self._engine, case, args)
             except ConsentRequired as exc:
-                await self._emit_blocked(
-                    f"Blocked: consent required for {exc.action.value}", correlation_id
-                )
+                await self._emit_blocked("blocked:missing_consent", correlation_id)
                 return ToolOutcome(
-                    ok=False, result={"error": "consent_required", "action": exc.action.value},
+                    ok=False,
+                    result={
+                        "error": "consent_required",
+                        "code": "blocked:missing_consent",
+                        "action": exc.action.value,
+                    },
                     summary="This action needs the customer's explicit consent first.",
                     service="Consent engine", status=EventStatus.blocked, label=pretty,
                 )

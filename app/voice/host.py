@@ -81,6 +81,10 @@ class ConversationHost:
     # ---- Governed tool dispatch ----------------------------------------- #
     async def call_tool(self, name: str, args: dict | None = None) -> ToolOutcome:
         args = dict(args or {})
+        if name == "run_credit_check":
+            args["customerId"] = self._repo.get().customer_profile.customer_id
+        elif name == "write_advisor_summary":
+            args["caseId"] = self._repo.get().case_id
         return await self._tools.dispatch(name, args)
 
     # ---- Consent (server-owned) ----------------------------------------- #
