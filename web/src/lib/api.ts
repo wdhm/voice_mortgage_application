@@ -84,6 +84,8 @@ export type FieldName =
 
 export interface DocumentProjection {
   document_state: DocumentState;
+  // Why an auto-rejected payslip was rejected (blurred / unreadable). Null unless rejected.
+  rejection_reason: string | null;
   provider: string;
   threshold: number;
   uploaded_document: {
@@ -265,6 +267,15 @@ export interface DemoCaseView {
   case_id: string;
   identity_status: IdentityStatus;
   document_state: DocumentState;
+  // Populated when a payslip is auto-rejected (blurred / unreadable). Null once a clean
+  // payslip is accepted. Drives the bank queue's red flag + case-detail rejection banner.
+  rejection_reason: string | null;
+  uploaded_document: {
+    filename: string;
+    content_type: string;
+    sample_key: string | null;
+    uploaded_at: string;
+  } | null;
   customer_profile: {
     customer_id: string;
     customer_number: string;

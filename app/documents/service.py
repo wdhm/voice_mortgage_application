@@ -139,6 +139,10 @@ class DocumentService:
                     return self._repo.get()
                 case = self._repo.get()
                 case.document_state = DocumentState.analysis_failed
+                case.rejection_reason = (
+                    "Content Understanding could not read this payslip. "
+                    "Ask the customer to re-upload a clear copy."
+                )
                 self._repo.set(case)
             await self._bus.emit(
                 event_type="document.failed", label=f"Analysis failed: {exc}",
@@ -170,8 +174,10 @@ class DocumentService:
             if not failing:
                 case.accepted_income = _build_accepted(extracted, Provenance.extracted)
                 case.document_state = DocumentState.accepted_automatically
+                case.rejection_reason = None
             else:
                 case.document_state = DocumentState.review_required
+                case.rejection_reason = None
             self._repo.set(case)
 
         if not failing:
@@ -262,6 +268,7 @@ class DocumentService:
             case.accepted_income = None
             case.review_record = None
             case.document_state = DocumentState.empty
+            case.rejection_reason = None
             case.capacity_result = None
             case.advisor_summary = None
             case.outcome = CaseOutcome.open

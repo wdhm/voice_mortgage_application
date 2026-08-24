@@ -169,7 +169,8 @@ async def test_epoch_guard_discards_result_when_reset_lands_mid_analysis(d):
     assert d.repo.epoch == before_epoch + 1  # reset happened
     assert case.accepted_income is None       # stale result discarded
     assert case.extracted_income is None
-    assert case.document_state is DocumentState.empty
+    # Canonical reset baseline now seeds Emma with an auto-rejected blurred payslip.
+    assert case.document_state is DocumentState.analysis_failed
 
 
 async def test_accepted_income_feeds_golden_calc(d):

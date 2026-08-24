@@ -225,6 +225,9 @@ class DemoCase(BaseModel):
 
     uploaded_document: UploadedDocument | None = None
     document_state: DocumentState = DocumentState.empty
+    # Human-readable reason a payslip was auto-rejected (blurred / unreadable / cropped).
+    # Populated when document_state is analysis_failed; cleared once a clean payslip is accepted.
+    rejection_reason: str | None = None
     extracted_income: ExtractedIncome | None = None
     accepted_income: AcceptedIncome | None = None
     review_record: ReviewRecord | None = None
