@@ -194,14 +194,7 @@ export default function App() {
             </section>
           </main>
         ) : (
-          <BankWorkspace
-            events={events}
-            refreshKey={events.length}
-            incomeVerified={incomeVerified}
-            affordabilityComplete={affordabilityComplete}
-            bankReviewComplete={bankReviewComplete}
-            appointmentComplete={appointmentComplete}
-          />
+          <BankWorkspace refreshKey={events.length} />
         )}
       </div>
       <PhoneButton voice={v} />

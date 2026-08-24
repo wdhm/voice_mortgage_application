@@ -6,7 +6,7 @@ and both cards are active with no replacement order.
 """
 from __future__ import annotations
 
-from datetime import UTC, date
+from datetime import UTC, date, datetime
 
 from .models import (
     AcceptedIncome,
@@ -17,6 +17,7 @@ from .models import (
     DocumentState,
     IdentityStatus,
     Provenance,
+    UploadedDocument,
 )
 
 # Canonical identifiers kept stable so tools and the UI can reference them.
@@ -24,6 +25,14 @@ CASE_ID = "case-emma"
 CUSTOMER_ID = "cust-emma-lindberg"
 MASTERCARD_ID = "card-mc-4471"
 VISA_DEBIT_ID = "card-visa-1842"
+
+# The demo opens with Emma's payslip already submitted and auto-rejected: the scan is
+# completely blurred, so Content Understanding cannot read the income fields. This is what
+# Bengt sees flagged red in the bulk review queue, and what re-upload later clears.
+REJECTED_PAYSLIP_REASON = (
+    "Content Understanding could not read this payslip — the scan is too blurred to extract "
+    "the income fields. Ask the customer to re-upload a clear copy."
+)
 
 
 def build_canonical_case(session_id: str, epoch: int = 0) -> DemoCase:
@@ -33,7 +42,17 @@ def build_canonical_case(session_id: str, epoch: int = 0) -> DemoCase:
         session_id=session_id,
         epoch=epoch,
         identity_status=IdentityStatus.identified,
-        document_state=DocumentState.empty,
+        document_state=DocumentState.analysis_failed,
+        rejection_reason=REJECTED_PAYSLIP_REASON,
+        uploaded_document=UploadedDocument(
+            filename="lonespec-northstar-scan.html",
+            content_type="text/html",
+            size_bytes=48_112,
+            sample_key="low_confidence",
+            uploaded_at=datetime.now(UTC),
+            analyzer_provider="simulated",
+            analyzer_method="content-understanding",
+        ),
         customer_profile=CustomerProfile(
             customer_id=CUSTOMER_ID,
             customer_number="1048 572 963",
@@ -84,4 +103,5 @@ def apply_accepted_income_emma(case: DemoCase) -> DemoCase:
         accepted_at=datetime.now(UTC),
     )
     case.document_state = DocumentState.accepted_automatically
+    case.rejection_reason = None
     return case

@@ -3567,3 +3567,109 @@ table.kalp tr.kalp-total td:last-child { color: var(--verified-teal); }
   font-size: 12px;
   color: var(--ink-soft);
 }
+
+/* --- Payslip review queue (bank view) ------------------------------------ */
+.queue-flag-summary {
+  margin: 0 8px 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(201, 52, 58, 0.16);
+  color: #ffd7d9;
+  font-size: 11px;
+  font-weight: 600;
+}
+.payslip-queue {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+.queue-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.queue-row:hover { background: rgba(255, 255, 255, 0.12); }
+.queue-row.active { background: rgba(255, 255, 255, 0.15); }
+.queue-row.active.flagged { box-shadow: inset 3px 0 var(--alfa-red); }
+.queue-row.active.ok { box-shadow: inset 3px 0 var(--verified-teal); }
+.queue-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.queue-row-body strong {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.queue-row-body small {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+}
+.payslip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.payslip-chip.ok { background: rgba(158, 219, 213, 0.16); color: #9edbd5; }
+.payslip-chip.flagged { background: rgba(201, 52, 58, 0.22); color: #ffb3b6; }
+.payslip-chip.large { padding: 7px 14px; font-size: 12px; }
+.payslip-chip.large.ok { background: rgba(8, 127, 120, 0.12); color: var(--verified-teal); }
+.payslip-chip.large.flagged { background: rgba(201, 52, 58, 0.12); color: var(--alfa-red); }
+.payslip-banner {
+  display: flex;
+  gap: 14px;
+  max-width: 1180px;
+  margin: 0 auto 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.payslip-banner.ok { border-left-color: var(--verified-teal); }
+.payslip-banner.flagged { border-left-color: var(--alfa-red); }
+.payslip-banner h2 { margin: 0 0 4px; font-size: 15px; }
+.payslip-banner.ok h2 { color: var(--verified-teal); }
+.payslip-banner.flagged h2 { color: var(--alfa-red); }
+.payslip-banner p { margin: 0; color: var(--ink-soft); font-size: 13px; line-height: 1.5; }
+.payslip-preview-card {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.payslip-frame {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+.payslip-frame.flagged { border-color: rgba(201, 52, 58, 0.4); }
+.payslip-frame iframe { display: block; width: 100%; height: 460px; border: 0; }
+.payslip-preview-card .evidence-source { margin-top: 10px; }

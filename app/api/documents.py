@@ -48,6 +48,7 @@ def _projection() -> dict:
     accepted = case.accepted_income.model_dump(mode="json") if case.accepted_income else None
     return {
         "document_state": case.document_state.value,
+        "rejection_reason": case.rejection_reason,
         "provider": app_state.documents.provider,
         "threshold": CONFIDENCE_THRESHOLD,
         "uploaded_document": case.uploaded_document.model_dump(mode="json") if case.uploaded_document else None,
