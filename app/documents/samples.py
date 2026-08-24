@@ -4,8 +4,10 @@ real personal data.
 The high-confidence sample is a real, detailed PDF committed to the repo
 (``assets/lonespec-northstar-hifi.pdf``, produced by ``scripts/generate_payslip_pdf.py``)
 so the customer uploads/previews an actual ``application/pdf`` document. The
-low-confidence sample stays a self-contained HTML preview that is visibly degraded
-(smudged net pay and employment type) to justify the human-review path.
+low-confidence sample is likewise a real committed PDF
+(``assets/lonespec-northstar-scan.pdf``) — a visibly blurred scan — served as
+``application/pdf`` to justify the human-review path. The bundled HTML renderer
+below is retained as a defensive fallback (and for the test harness).
 """
 from __future__ import annotations
 
@@ -26,7 +28,9 @@ SAMPLES = [
         "key": "low_confidence",
         "label": "Low-confidence payslip",
         "description": "Degraded scan — routes to human review.",
-        "filename": "lonespec-northstar-scan.html",
+        "filename": "lonespec-northstar-scan.pdf",
+        # Real committed blurred PDF asset served as application/pdf for preview + analysis.
+        "pdf": "lonespec-northstar-scan.pdf",
     },
 ]
 
