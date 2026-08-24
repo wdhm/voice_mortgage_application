@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     foundry_endpoint: str = "https://foundry-mortgage.cognitiveservices.azure.com/"
     azure_ai_access_token: SecretStr | None = None
     azure_ai_key: SecretStr | None = None
+    azure_credential_mode: str = "default"
     voicelive_model: str = "gpt-realtime-1.5"
     voicelive_api_version: str = "2026-07-15"
     voicelive_voice: str = "en-US-AvaNeural"

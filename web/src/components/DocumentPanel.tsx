@@ -141,6 +141,11 @@ function CustomerUpload({
         return { tone: "warn", text: "This document couldn't be used. Please upload a new payslip." };
       case "analysis_failed":
         return { tone: "warn", text: "We couldn't process that file. Please upload a new payslip." };
+      case "review_required":
+        return {
+          tone: "review",
+          text: "Automated checks passed. Your payslip is waiting for an advisor to approve it.",
+        };
       default:
         return { tone: "ok", text: "Payslip received. Bank Alfa is reviewing your income." };
     }
@@ -151,6 +156,7 @@ function CustomerUpload({
       <div className="doc-head">
         <h2>Income verification</h2>
         {approved && <span className="doc-status verified">✓ Approved</span>}
+        {state === "review_required" && <span className="doc-status review">Awaiting advisor</span>}
       </div>
       <p className="doc-sub">
         Upload your latest payslip. We will read the five required income details below and show you
@@ -179,8 +185,8 @@ function CustomerUpload({
             <div>
               <strong>Your payslip couldn’t be read</strong>
               <p>
-                {doc?.rejection_reason ??
-                  "The scan was too blurred to read. Please upload a clear copy of your payslip."}
+                This scan is too blurry for us to verify your income. Please remove it and upload a
+                clearer copy. Call us if you need help.
               </p>
             </div>
           </div>
@@ -197,12 +203,16 @@ function CustomerUpload({
       )}
 
       {analyzing && (
-        <div className="upload-receipt busy">
-          <span className="upload-file-icon" aria-hidden>…</span>
-          <div>
-            <strong>Submitting your payslip…</strong>
-            <small>This only takes a moment.</small>
+        <div className="ocr-progress" role="status">
+          <div className="ocr-progress-head">
+            <span className="upload-file-icon" aria-hidden>OCR</span>
+            <div>
+              <strong>Reading your new payslip…</strong>
+              <small>Extracting employer, salary, employment type, and pay date.</small>
+            </div>
           </div>
+          <div className="ocr-progress-track" aria-hidden><span /></div>
+          <p>Running automated document checks</p>
         </div>
       )}
 
@@ -241,9 +251,18 @@ function CustomerUpload({
               </div>
               {onContinue && (
                 <button type="button" className="icon-btn primary" onClick={onContinue}>
-                  Continue to credit check →
+                  Continue to appointment →
                 </button>
               )}
+            </div>
+          )}
+          {state === "review_required" && (
+            <div className="income-review-pending">
+              <div>
+                <strong>Automated review complete</strong>
+                <span>Your payslip was read successfully and is waiting for a Bank Alfa advisor.</span>
+              </div>
+              <span className="doc-status review">Manual approval needed</span>
             </div>
           )}
           <div className={`upload-receipt ${receipt.tone}`}>
@@ -298,8 +317,8 @@ function CustomerUpload({
         </table>
         {state === "review_required" && (
           <p className="customer-review-note">
-            Some details could not be read confidently. A Bank Alfa advisor will review the highlighted
-            information before your application continues.
+            All required details were found. A Bank Alfa advisor now needs to approve the extracted
+            information before your income is verified.
           </p>
         )}
         {doc?.provider === "simulated" && fields && (

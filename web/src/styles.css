@@ -883,7 +883,7 @@ body {
 }
 .mortgage-progress ol {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin: 0;
   padding: 0;
@@ -1663,6 +1663,11 @@ button.checklist-step:hover {
   border-color: rgba(8, 127, 120, 0.35);
   background: #f0faf8;
 }
+.doc-status.review {
+  color: var(--review-amber);
+  border-color: rgba(183, 121, 31, 0.4);
+  background: #fdf6ea;
+}
 .doc-sub {
   color: var(--ink-soft);
   font-size: 13px;
@@ -1843,6 +1848,10 @@ button.checklist-step:hover {
   border-color: rgba(201, 52, 58, 0.35);
   background: #fff8f7;
 }
+.upload-receipt.review {
+  border-color: rgba(183, 121, 31, 0.4);
+  background: #fdf6ea;
+}
 .upload-receipt > div {
   display: flex;
   flex-direction: column;
@@ -1889,6 +1898,20 @@ button.checklist-step:hover {
   flex: none;
   color: #fff;
 }
+.income-review-pending {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  border: 1px solid rgba(183, 121, 31, 0.4);
+  border-radius: 12px;
+  background: #fdf6ea;
+}
+.income-review-pending > div { display: flex; flex-direction: column; gap: 2px; }
+.income-review-pending strong { color: var(--review-amber); font-size: 14px; }
+.income-review-pending span { color: var(--ink-soft); font-size: 12px; }
 .remove-upload {
   color: var(--danger);
   border-color: rgba(201, 52, 58, 0.35);
@@ -1935,6 +1958,37 @@ button.checklist-step:hover {
   flex-direction: column;
   gap: 10px;
   padding: 8px 0;
+}
+.ocr-progress {
+  margin: 14px 0;
+  padding: 18px;
+  border: 1px solid rgba(8, 127, 120, 0.28);
+  border-radius: 12px;
+  background: #f7fbfa;
+}
+.ocr-progress-head { display: flex; align-items: center; gap: 12px; }
+.ocr-progress-head > div { display: flex; flex-direction: column; gap: 3px; }
+.ocr-progress-head strong { font-size: 14px; }
+.ocr-progress-head small { color: var(--ink-soft); font-size: 12px; }
+.ocr-progress-track {
+  height: 7px;
+  margin-top: 16px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(8, 127, 120, 0.12);
+}
+.ocr-progress-track span {
+  display: block;
+  width: 45%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--verified-teal);
+  animation: ocr-scan 1.2s ease-in-out infinite;
+}
+.ocr-progress p { margin: 8px 0 0; color: var(--ink-soft); font-size: 11px; }
+@keyframes ocr-scan {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(245%); }
 }
 .doc-analyzing p {
   color: var(--ink-faint);
@@ -2945,6 +2999,269 @@ button.checklist-step:hover {
   color: var(--ink-soft);
   font-size: 12px;
 }
+.appointment-calendar {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.appointment-calendar-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.appointment-calendar-head h3 {
+  margin: 3px 0 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 550;
+}
+.appointment-calendar-head > span {
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+.appointment-week {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 18px;
+}
+.appointment-month-weekdays,
+.appointment-month-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.appointment-month-weekdays {
+  border-bottom: 1px solid var(--border);
+  background: #f6f8f7;
+}
+.appointment-month-weekdays span {
+  padding: 9px 6px;
+  color: var(--ink-faint);
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+}
+.appointment-month-day {
+  min-height: 94px;
+  padding: 8px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.appointment-month-day:nth-child(5n) { border-right: 0; }
+.appointment-month-day:nth-last-child(-n + 5) { border-bottom: 0; }
+.appointment-month-day.outside { background: #f8f9f8; }
+.appointment-month-day.has-slots { background: #f7fbfa; }
+.appointment-day-number {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 650;
+}
+.appointment-month-slot {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px;
+  border: 1px solid rgba(8, 127, 120, 0.25);
+  border-radius: 7px;
+  background: rgba(8, 127, 120, 0.08);
+  color: var(--verified-teal);
+  text-align: left;
+}
+.appointment-month-slot strong { font-size: 11px; }
+.appointment-month-slot small {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+button.appointment-month-slot {
+  font: inherit;
+  cursor: pointer;
+}
+button.appointment-month-slot:hover {
+  border-color: var(--verified-teal);
+  background: rgba(8, 127, 120, 0.14);
+}
+.appointment-month-slot.booked {
+  border-color: var(--verified-teal);
+  background: var(--verified-teal);
+  color: #fff;
+}
+.appointment-time-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.appointment-time-chip {
+  padding: 4px 6px;
+  border: 1px solid rgba(8, 127, 120, 0.28);
+  border-radius: 6px;
+  background: rgba(8, 127, 120, 0.08);
+  color: var(--verified-teal);
+  font: inherit;
+  font-size: 9px;
+  font-weight: 650;
+}
+button.appointment-time-chip { cursor: pointer; }
+button.appointment-time-chip:hover { border-color: var(--verified-teal); }
+.appointment-time-chip.booked {
+  border-color: var(--verified-teal);
+  background: var(--verified-teal);
+  color: #fff;
+}
+.appointment-availability-label {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink-faint);
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.appointment-day {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fafbfa;
+}
+.appointment-slot-button {
+  display: contents;
+  color: inherit;
+  cursor: pointer;
+}
+.appointment-slot-button:disabled { cursor: wait; }
+.appointment-day:has(.appointment-slot-button):hover {
+  border-color: var(--verified-teal);
+  background: #f0faf8;
+}
+.appointment-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 8px;
+  background: #edf1f0;
+}
+.appointment-date span,
+.appointment-date small {
+  color: var(--ink-faint);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.appointment-date strong {
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 600;
+}
+.appointment-slot {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 14px;
+}
+.appointment-slot strong { font-size: 16px; }
+.appointment-slot span { color: var(--ink-soft); font-size: 10px; }
+.appointment-slot b {
+  width: fit-content;
+  margin-top: 5px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(8, 127, 120, 0.1);
+  color: var(--verified-teal);
+  font-size: 9px;
+}
+.appointment-day.booked {
+  border-color: rgba(8, 127, 120, 0.55);
+  background: #f0faf8;
+  box-shadow: inset 0 0 0 1px rgba(8, 127, 120, 0.12);
+}
+.appointment-day.booked .appointment-date {
+  background: var(--verified-teal);
+  color: #fff;
+}
+.appointment-day.booked .appointment-date span,
+.appointment-day.booked .appointment-date small { color: rgba(255, 255, 255, 0.78); }
+.appointment-bookings {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.appointment-bookings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.appointment-bookings-head h2 {
+  margin: 3px 0 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 550;
+}
+.booking-status {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(8, 127, 120, 0.1);
+  color: var(--verified-teal);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.appointment-booking-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+}
+.appointment-booking-details {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+.appointment-booking-details strong { font-size: 13px; }
+.appointment-booking-details span { color: var(--ink-soft); font-size: 10px; }
+.appointment-actions {
+  display: flex;
+  gap: 8px;
+}
+.appointment-actions button {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.appointment-actions button:hover { border-color: var(--verified-teal); }
+.appointment-actions button.cancel { color: var(--danger); }
+.appointment-actions button:disabled { opacity: 0.55; cursor: wait; }
+.appointment-empty {
+  margin: 0;
+  padding: 22px 20px;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
 .appointment-confirmed {
   display: flex;
   align-items: flex-start;
@@ -3000,6 +3317,9 @@ button.checklist-step:hover {
 .appointment-confirmed small {
   color: var(--ink-soft);
   font-size: 10px;
+}
+@media (max-width: 760px) {
+  .appointment-week { grid-template-columns: 1fr; }
 }
 .bank-appointment-card {
   max-width: 760px;
@@ -3606,6 +3926,7 @@ table.kalp tr.kalp-total td:last-child { color: var(--verified-teal); }
 .queue-row.active { background: rgba(255, 255, 255, 0.15); }
 .queue-row.active.flagged { box-shadow: inset 3px 0 var(--alfa-red); }
 .queue-row.active.ok { box-shadow: inset 3px 0 var(--verified-teal); }
+.queue-row.active.review { box-shadow: inset 3px 0 var(--review-amber); }
 .queue-row-body {
   display: flex;
   flex-direction: column;
@@ -3635,9 +3956,11 @@ table.kalp tr.kalp-total td:last-child { color: var(--verified-teal); }
 }
 .payslip-chip.ok { background: rgba(158, 219, 213, 0.16); color: #9edbd5; }
 .payslip-chip.flagged { background: rgba(201, 52, 58, 0.22); color: #ffb3b6; }
+.payslip-chip.review { background: rgba(183, 121, 31, 0.22); color: #ffe0a6; }
 .payslip-chip.large { padding: 7px 14px; font-size: 12px; }
 .payslip-chip.large.ok { background: rgba(8, 127, 120, 0.12); color: var(--verified-teal); }
 .payslip-chip.large.flagged { background: rgba(201, 52, 58, 0.12); color: var(--alfa-red); }
+.payslip-chip.large.review { background: #fdf6ea; color: var(--review-amber); }
 .payslip-banner {
   display: flex;
   gap: 14px;
@@ -3651,9 +3974,11 @@ table.kalp tr.kalp-total td:last-child { color: var(--verified-teal); }
 }
 .payslip-banner.ok { border-left-color: var(--verified-teal); }
 .payslip-banner.flagged { border-left-color: var(--alfa-red); }
+.payslip-banner.review { align-items: center; justify-content: space-between; border-left-color: var(--review-amber); }
 .payslip-banner h2 { margin: 0 0 4px; font-size: 15px; }
 .payslip-banner.ok h2 { color: var(--verified-teal); }
 .payslip-banner.flagged h2 { color: var(--alfa-red); }
+.payslip-banner.review h2 { color: var(--review-amber); }
 .payslip-banner p { margin: 0; color: var(--ink-soft); font-size: 13px; line-height: 1.5; }
 .payslip-preview-card {
   max-width: 1180px;
@@ -3663,6 +3988,13 @@ table.kalp tr.kalp-total td:last-child { color: var(--verified-teal); }
   border-radius: var(--radius);
   background: var(--surface);
 }
+.payslip-review-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+  gap: 18px;
+  align-items: start;
+}
+.payslip-document-pane { min-width: 0; }
 .payslip-frame {
   margin-top: 12px;
   border: 1px solid var(--border);
@@ -3671,8 +4003,74 @@ table.kalp tr.kalp-total td:last-child { color: var(--verified-teal); }
   background: #fff;
 }
 .payslip-frame.flagged { border-color: rgba(201, 52, 58, 0.4); }
+.payslip-frame.review { border-color: rgba(183, 121, 31, 0.4); }
 .payslip-frame iframe { display: block; width: 100%; height: 460px; border: 0; }
 .payslip-preview-card .evidence-source { margin-top: 10px; }
+.extracted-data-panel {
+  overflow: hidden;
+  border: 1px solid rgba(8, 127, 120, 0.28);
+  border-radius: 8px;
+  background: #f7fbfa;
+}
+.extracted-data-panel.flagged {
+  border-color: rgba(201, 52, 58, 0.35);
+  background: #fff8f8;
+}
+.extracted-data-panel.review {
+  border-color: rgba(183, 121, 31, 0.4);
+  background: #fffcf6;
+}
+.extracted-data-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.extracted-data-head h3 { margin: 3px 0 0; font-size: 16px; }
+.extracted-field-list { margin: 0; padding: 4px 16px; }
+.extracted-field-list > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border);
+}
+.extracted-field-list > div:last-child { border-bottom: 0; }
+.extracted-field-list dt { color: var(--ink-soft); font-size: 12px; }
+.extracted-field-list dd { margin: 0; font-size: 13px; font-weight: 650; text-align: right; }
+.extracted-field-list span {
+  grid-column: 1 / -1;
+  color: var(--verified-teal);
+  font-size: 10px;
+  text-align: right;
+}
+.extracted-field-list .missing dd,
+.extracted-field-list .missing span { color: var(--alfa-red); }
+.json-source {
+  margin: 0;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: rgba(23, 33, 38, 0.035);
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.json-source code { color: var(--ink); overflow-wrap: anywhere; }
+.payslip-follow-up { max-width: 1180px; margin: 10px auto 0; }
+.queue-load-error { color: var(--alfa-red); }
+.queue-review-summary {
+  margin: 0 8px 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(183, 121, 31, 0.2);
+  color: #ffe0a6;
+  font-size: 11px;
+  font-weight: 600;
+}
+@media (max-width: 980px) {
+  .payslip-review-grid { grid-template-columns: 1fr; }
+}
 
 /* --- Customer re-upload (rejected payslip) -------------------------------- */
 .payslip-rejected-card {

@@ -6,7 +6,11 @@ provider mode (so the demo is explicit about simulated vs real analysis).
 """
 from __future__ import annotations
 
+import asyncio
+import json
 from datetime import UTC, datetime
+from html import escape
+from pathlib import Path
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
@@ -24,6 +28,56 @@ router = APIRouter(prefix="/api/documents")
 # Bump the version if the shape changes so downstream consumers can adapt.
 EXTRACTION_SCHEMA = "bankalfa.income-extraction"
 EXTRACTION_SCHEMA_VERSION = "1.0"
+_BANK_EXTRACTIONS_PATH = Path(__file__).resolve().parents[1] / "documents" / "extracted_payslips.json"
+
+
+def _bank_extractions() -> dict:
+    return json.loads(_BANK_EXTRACTIONS_PATH.read_text(encoding="utf-8"))
+
+
+def _bank_payslips_with_live_emma() -> dict:
+    payload = _bank_extractions()
+    case = app_state.repo.get()
+    emma = next(record for record in payload["payslips"] if record["id"] == "emma")
+    accepted = case.accepted_income
+
+    emma["customer"].update(
+        {
+            "name": case.customer_profile.display_name,
+            "customer_number": case.customer_profile.customer_number,
+            "city": case.customer_profile.city,
+        }
+    )
+    if case.uploaded_document:
+        emma["document"]["filename"] = case.uploaded_document.filename
+        emma["document"]["content_type"] = case.uploaded_document.content_type
+        emma["document"]["uploaded_at"] = case.uploaded_document.uploaded_at.isoformat()
+
+    if accepted:
+        emma["status"] = "accepted"
+        emma["fields"] = {
+            "employer_name": accepted.employer_name,
+            "gross_salary_monthly": accepted.gross_salary_monthly,
+            "net_salary_monthly": accepted.net_salary_monthly,
+            "employment_type": accepted.employment_type,
+            "pay_date": accepted.pay_date.isoformat(),
+        }
+        emma["confidence"] = {name: 1.0 for name in REQUIRED_FIELDS}
+    elif case.document_state is DocumentState.review_required and case.extracted_income:
+        emma["status"] = "review_required"
+        emma["fields"] = {}
+        emma["confidence"] = {}
+        for name in REQUIRED_FIELDS:
+            field = getattr(case.extracted_income, name)
+            emma["fields"][name] = (
+                field.normalized_value if field.normalized_value is not None else field.value
+            )
+            emma["confidence"][name] = field.confidence
+    else:
+        emma["status"] = "rejected"
+        emma["fields"] = {name: None for name in REQUIRED_FIELDS}
+        emma["confidence"] = {name: None for name in REQUIRED_FIELDS}
+    return payload
 
 
 def _projection() -> dict:
@@ -122,6 +176,76 @@ async def list_samples() -> list[dict]:
     return [{"key": s["key"], "label": s["label"], "description": s["description"]} for s in SAMPLES]
 
 
+@router.get("/bank-extractions")
+async def bank_extractions() -> dict:
+    """Structured payslip output used by the bank's bulk-review workspace."""
+    return _bank_payslips_with_live_emma()
+
+
+@router.get("/bank-extractions/{record_id}/preview")
+async def bank_extraction_preview(record_id: str) -> HTMLResponse:
+    payload = _bank_payslips_with_live_emma()
+    record = next((item for item in payload["payslips"] if item["id"] == record_id), None)
+    if record is None:
+        raise HTTPException(status_code=404, detail="unknown payslip")
+    if record_id == "emma" and record["status"] == "rejected":
+        pdf = sample_pdf_path("low_confidence")
+        if pdf is not None:
+            return FileResponse(
+                pdf,
+                media_type="application/pdf",
+                filename=pdf.name,
+                content_disposition_type="inline",
+            )
+
+    fields = record["fields"]
+    customer = record["customer"]
+    gross = f"{fields['gross_salary_monthly']:,}".replace(",", " ")
+    net = f"{fields['net_salary_monthly']:,}".replace(",", " ")
+    themes = {
+        "johan": {"accent": "#145b8c", "soft": "#eaf3f9", "layout": "sidebar", "font": "Arial"},
+        "sara": {"accent": "#6c3a8f", "soft": "#f3ecf7", "layout": "boxed", "font": "Georgia"},
+        "anders": {"accent": "#d5661f", "soft": "#fff2e8", "layout": "industrial", "font": "Verdana"},
+        "linnea": {"accent": "#147d73", "soft": "#e8f5f3", "layout": "minimal", "font": "Tahoma"},
+        "emma": {"accent": "#c9343a", "soft": "#f8ecec", "layout": "classic", "font": "Arial"},
+    }
+    theme = themes[record_id]
+    html = f"""<!doctype html>
+<html lang="sv"><head><meta charset="utf-8"><style>
+body{{margin:0;background:#eceeed;font-family:{theme['font']},sans-serif;color:#172126}}
+.sheet{{max-width:640px;margin:20px auto;background:#fff;padding:34px 40px;box-shadow:0 12px 30px #17212618;
+  border-top:8px solid {theme['accent']}}}
+.top{{display:flex;justify-content:space-between;border-bottom:2px solid {theme['accent']};padding-bottom:14px}}
+.brand{{color:{theme['accent']};font-weight:700;font-size:20px}} .muted{{color:#5b6b6a;font-size:12px}}
+.system{{display:inline-block;margin-bottom:8px;padding:5px 9px;background:{theme['soft']};color:{theme['accent']};
+  border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}}
+h1{{font-family:Georgia,serif;font-size:22px;margin:22px 0 4px}}
+.row{{display:flex;justify-content:space-between;border-bottom:1px solid #d5dcda;padding:9px 0}}
+.value{{font-weight:700}} .totals{{margin-top:22px;border-top:2px solid #172126}}
+.net .value{{color:{theme['accent']}}}
+.layout-sidebar .sheet{{padding-left:120px;position:relative;border-top:0;border-left:12px solid {theme['accent']}}}
+.layout-sidebar .sheet:before{{content:"PAYROLL";position:absolute;left:18px;top:44px;color:{theme['accent']};
+  font-size:11px;font-weight:700;letter-spacing:.18em;writing-mode:vertical-rl}}
+.layout-boxed .sheet{{border:1px solid {theme['accent']};border-top:18px solid {theme['accent']};border-radius:12px}}
+.layout-boxed .row{{margin:8px 0;padding:12px;border:1px solid #ded5e3;border-radius:8px;background:{theme['soft']}}}
+.layout-boxed .totals{{border:0}}
+.layout-industrial .sheet{{border:0;box-shadow:8px 8px 0 {theme['accent']};background:#fffdf9}}
+.layout-industrial .top{{border-bottom:4px double {theme['accent']}}}
+.layout-industrial h1{{font-family:Verdana,sans-serif;text-transform:uppercase;letter-spacing:.08em}}
+.layout-minimal .sheet{{border-top:3px solid {theme['accent']};box-shadow:none}}
+.layout-minimal .top{{border:0;padding-bottom:30px}}
+.layout-minimal .row{{border:0;border-bottom:1px solid #edf1f0}}
+</style></head><body><div class="sheet">
+<div class="top"><div class="brand">{escape(str(fields['employer_name']))}<div class="muted">Arbetsgivare</div></div>
+<div class="muted">Löneperiod: Augusti 2026<br>Utbetalningsdatum: {escape(str(fields['pay_date']))}</div></div>
+<h1>Lönespecifikation</h1><p class="muted">{escape(customer['name'])} · {escape(customer['city'])}</p>
+<div class="row"><span>Anställningsform</span><span class="value">{escape(str(fields['employment_type']))}</span></div>
+<div class="totals"><div class="row"><span>Bruttolön</span><span class="value">{gross} kr</span></div>
+<div class="row net"><span>Nettolön (utbetalas)</span><span class="value">{net} kr</span></div></div>
+</div><script>document.body.className="layout-{theme['layout']}"</script></body></html>"""
+    return HTMLResponse(html)
+
+
 @router.get("/sample/{key}/preview")
 async def sample_preview(key: str):
     if key not in SAMPLE_KEYS:
@@ -169,6 +293,9 @@ async def upload(file: UploadFile = File(...)) -> dict:  # noqa: B008 (FastAPI d
         validate_upload(content, file.content_type or "")
     except UploadValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if app_state.documents.provider == "simulated":
+        # Keep the OCR progress state visible long enough for the recorded demo.
+        await asyncio.sleep(1.4)
     case = await app_state.documents.analyze(
         content=content, content_type=file.content_type or "", filename=file.filename or "upload", sample_key=None
     )

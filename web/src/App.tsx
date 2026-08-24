@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Header, type AppRole } from "./components/Header";
 import { DocumentPanel } from "./components/DocumentPanel";
 import { VoicePanel } from "./components/VoicePanel";
-import { SummaryPanel } from "./components/SummaryPanel";
 import { MortgageChecklist, MortgageProgress } from "./components/MortgageChecklist";
 import { PhoneButton } from "./components/PhoneButton";
 import { BankWorkspace } from "./components/BankWorkspace";
@@ -27,13 +26,11 @@ function roleFromPath(): AppRole {
 export default function App() {
   const { events, epoch, conn } = useEventStream();
   const v = useVoice();
-  const [step, setStep] = useState<number>(1);
+  const [step, setStep] = useState<number>(2);
   const [role, setRole] = useState<AppRole>(roleFromPath);
   const [customerService, setCustomerService] = useState<CustomerService | null>(null);
   const [mortgagePage, setMortgagePage] = useState<"overview" | "application">("overview");
   const [incomeVerified, setIncomeVerified] = useState(false);
-  const [affordabilityComplete, setAffordabilityComplete] = useState(false);
-  const [bankReviewComplete, setBankReviewComplete] = useState(false);
   const [appointmentComplete, setAppointmentComplete] = useState(false);
   const lastEpoch = useRef(epoch);
   const spokenRef = useRef(0);
@@ -48,7 +45,7 @@ export default function App() {
   useEffect(() => {
     if (epoch !== lastEpoch.current) {
       lastEpoch.current = epoch;
-      setStep(1);
+      setStep(2);
     }
   }, [epoch]);
 
@@ -61,10 +58,7 @@ export default function App() {
           caseView.document_state === "accepted_automatically" ||
           caseView.document_state === "accepted_after_review";
         setIncomeVerified(verified);
-        setAffordabilityComplete(caseView.capacity_result !== null);
-        setBankReviewComplete(caseView.advisor_summary !== null);
         setAppointmentComplete(caseView.booked_meeting !== null);
-        if (!verified) setStep(1);
       })
       .catch(() => {});
     return () => {
@@ -129,8 +123,6 @@ export default function App() {
                 <MortgageChecklist
                   activeStep={step}
                   incomeVerified={incomeVerified}
-                  affordabilityComplete={affordabilityComplete}
-                  bankReviewComplete={bankReviewComplete}
                   appointmentComplete={appointmentComplete}
                   onOpenStep={(n) => {
                     setStep(n);
@@ -150,8 +142,6 @@ export default function App() {
                   <MortgageProgress
                     activeStep={step}
                     incomeVerified={incomeVerified}
-                    affordabilityComplete={affordabilityComplete}
-                    bankReviewComplete={bankReviewComplete}
                     appointmentComplete={appointmentComplete}
                     onOpenStep={setStep}
                   />
@@ -159,36 +149,36 @@ export default function App() {
                     <p className="eyebrow">Mortgage application</p>
                     <h1>
                       {step === 1
-                        ? "Income verification"
+                        ? "Credit check"
                         : step === 2
-                          ? "Credit & affordability"
-                          : step === 3
-                            ? "Bank review"
-                            : "Appointment"}
+                          ? "Income verification"
+                          : "Appointment"}
                     </h1>
                   </div>
-                  {step === 1 && (
-                    <DocumentPanel
-                      role="customer"
-                      refreshKey={events.length}
-                      onContinue={() => setStep(2)}
-                    />
-                  )}
                   {step === 2 && (
-                    <VoicePanel
-                      v={v}
-                      refreshKey={events.length}
-                      onContinue={bankReviewComplete ? () => setStep(3) : undefined}
-                    />
+                    <>
+                      <DocumentPanel
+                        role="customer"
+                        refreshKey={events.length}
+                        onContinue={() => setStep(3)}
+                      />
+                      {v.session === "active" && (
+                        <VoicePanel
+                          v={v}
+                          refreshKey={events.length}
+                          title="Income verification support"
+                          description="Ask us about your payslip or get help uploading a clearer copy."
+                          showAssessment={false}
+                        />
+                      )}
+                    </>
                   )}
                   {step === 3 && (
-                    <SummaryPanel
+                    <AppointmentPanel
                       refreshKey={events.length}
-                      audience="customer"
-                      onContinue={bankReviewComplete ? () => setStep(4) : undefined}
+                      onBookingChange={setAppointmentComplete}
                     />
                   )}
-                  {step === 4 && <AppointmentPanel v={v} refreshKey={events.length} />}
                 </div>
               )}
             </section>

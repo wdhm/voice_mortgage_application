@@ -18,6 +18,7 @@ import base64
 import httpx
 from azure.core.exceptions import ClientAuthenticationError
 
+from ..azure_auth import build_async_credential
 from ..config import settings
 from .port import REQUIRED_FIELDS, AnalysisError, AnalyzerResult, FieldExtraction
 
@@ -36,14 +37,12 @@ class FoundryDocumentAnalyzer:
         self._credential = None  # lazily created; avoids az login at import time
 
     async def _auth_headers(self) -> dict[str, str]:
-        if settings.azure_ai_access_token is not None:
+        if settings.azure_credential_mode != "cli" and settings.azure_ai_access_token is not None:
             return {"Authorization": f"Bearer {settings.azure_ai_access_token.get_secret_value()}"}
-        if settings.azure_ai_key is not None:
+        if settings.azure_credential_mode != "cli" and settings.azure_ai_key is not None:
             return {"Ocp-Apim-Subscription-Key": settings.azure_ai_key.get_secret_value()}
         if self._credential is None:
-            from azure.identity.aio import DefaultAzureCredential
-
-            self._credential = DefaultAzureCredential(process_timeout=60)
+            self._credential = build_async_credential()
         try:
             token = await self._credential.get_token(_SCOPE)
         except ClientAuthenticationError as exc:

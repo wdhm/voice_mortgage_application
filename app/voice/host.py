@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 _ACTION_MAP = {
     "credit_check": ConsentAction.credit_check,
-    "block_card": ConsentAction.block_card,
 }
 
 
@@ -92,9 +91,7 @@ class ConversationHost:
         mapped = _ACTION_MAP.get(action)
         if mapped is None:
             raise ValueError(f"Unsupported consent action: {action}")
-        if mapped is ConsentAction.block_card and not card_id:
-            raise ValueError("A card_id is required for card-block consent.")
-        scope = card_id if mapped is ConsentAction.block_card else None
+        scope = None
         rec = await self._tools.request_consent(mapped, resource_scope=scope)
         await self._channel.publish(
             {"type": "consent", "status": "requested", "action": action, "scope": scope,

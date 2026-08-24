@@ -1,0 +1,167 @@
+{
+  "schema": "bankalfa.payslip-extractions",
+  "schema_version": "1.0",
+  "generated_at": "2026-08-24T15:30:00Z",
+  "payslips": [
+    {
+      "id": "johan",
+      "status": "accepted",
+      "customer": {
+        "name": "Johan Bergström",
+        "initials": "JB",
+        "customer_number": "1024 681 335",
+        "city": "Stockholm"
+      },
+      "document": {
+        "filename": "lonespec-johan-bergstrom.pdf",
+        "content_type": "application/pdf"
+      },
+      "analyzer": {
+        "provider": "simulated",
+        "method": "content-understanding"
+      },
+      "fields": {
+        "employer_name": "Fjällglimt Teknik AB",
+        "gross_salary_monthly": 68000,
+        "net_salary_monthly": 44200,
+        "employment_type": "Permanent",
+        "pay_date": "2026-08-25"
+      },
+      "confidence": {
+        "employer_name": 0.99,
+        "gross_salary_monthly": 0.99,
+        "net_salary_monthly": 0.98,
+        "employment_type": 0.97,
+        "pay_date": 0.99
+      }
+    },
+    {
+      "id": "sara",
+      "status": "accepted",
+      "customer": {
+        "name": "Sara Nyström",
+        "initials": "SN",
+        "customer_number": "1057 224 918",
+        "city": "Solna"
+      },
+      "document": {
+        "filename": "lonespec-sara-nystrom.pdf",
+        "content_type": "application/pdf"
+      },
+      "analyzer": {
+        "provider": "simulated",
+        "method": "content-understanding"
+      },
+      "fields": {
+        "employer_name": "Solros Hälsopartner AB",
+        "gross_salary_monthly": 54500,
+        "net_salary_monthly": 36500,
+        "employment_type": "Permanent",
+        "pay_date": "2026-08-25"
+      },
+      "confidence": {
+        "employer_name": 0.98,
+        "gross_salary_monthly": 0.99,
+        "net_salary_monthly": 0.98,
+        "employment_type": 0.96,
+        "pay_date": 0.99
+      }
+    },
+    {
+      "id": "emma",
+      "status": "rejected",
+      "customer": {
+        "name": "Emma Lindberg",
+        "initials": "EL",
+        "customer_number": "1048 572 963",
+        "city": "Täby"
+      },
+      "document": {
+        "filename": "lonespec-northstar-scan.pdf",
+        "content_type": "application/pdf"
+      },
+      "analyzer": {
+        "provider": "simulated",
+        "method": "content-understanding"
+      },
+      "fields": {
+        "employer_name": null,
+        "gross_salary_monthly": null,
+        "net_salary_monthly": null,
+        "employment_type": null,
+        "pay_date": null
+      },
+      "confidence": {
+        "employer_name": null,
+        "gross_salary_monthly": null,
+        "net_salary_monthly": null,
+        "employment_type": null,
+        "pay_date": null
+      }
+    },
+    {
+      "id": "anders",
+      "status": "accepted",
+      "customer": {
+        "name": "Anders Karlsson",
+        "initials": "AK",
+        "customer_number": "1086 442 701",
+        "city": "Nacka"
+      },
+      "document": {
+        "filename": "lonespec-anders-karlsson.pdf",
+        "content_type": "application/pdf"
+      },
+      "analyzer": {
+        "provider": "simulated",
+        "method": "content-understanding"
+      },
+      "fields": {
+        "employer_name": "Norrsken Logistik AB",
+        "gross_salary_monthly": 61200,
+        "net_salary_monthly": 40300,
+        "employment_type": "Permanent",
+        "pay_date": "2026-08-25"
+      },
+      "confidence": {
+        "employer_name": 0.99,
+        "gross_salary_monthly": 0.98,
+        "net_salary_monthly": 0.98,
+        "employment_type": 0.97,
+        "pay_date": 0.99
+      }
+    },
+    {
+      "id": "linnea",
+      "status": "accepted",
+      "customer": {
+        "name": "Linnéa Holm",
+        "initials": "LH",
+        "customer_number": "1015 937 624",
+        "city": "Danderyd"
+      },
+      "document": {
+        "filename": "lonespec-linnea-holm.pdf",
+        "content_type": "application/pdf"
+      },
+      "analyzer": {
+        "provider": "simulated",
+        "method": "content-understanding"
+      },
+      "fields": {
+        "employer_name": "Luma Formstudio AB",
+        "gross_salary_monthly": 72000,
+        "net_salary_monthly": 46800,
+        "employment_type": "Permanent",
+        "pay_date": "2026-08-25"
+      },
+      "confidence": {
+        "employer_name": 0.98,
+        "gross_salary_monthly": 0.99,
+        "net_salary_monthly": 0.98,
+        "employment_type": 0.96,
+        "pay_date": 0.99
+      }
+    }
+  ]
+}

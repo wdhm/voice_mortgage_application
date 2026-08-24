@@ -392,32 +392,67 @@ def write_advisor_summary(engine: ConsentEngine, case: DemoCase, args: dict) -> 
 def get_available_meeting_times(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOutcome:
     earliest = _parse_date(args.get("earliest_date"))
     preferred = (args.get("preferred_time") or "afternoon").lower()
-    hour = {"morning": 9, "midday": 12, "afternoon": 15}.get(preferred, 15)
+    full_month = args.get("full_month") is True
 
-    monday = earliest + timedelta(days=(7 - earliest.weekday()) % 7)  # roll forward to Monday
-    slots: list[MeetingSlot] = []
-    for offset in (0, 2, 4):  # Mon / Wed / Fri that week
-        day = monday + timedelta(days=offset)
-        start = datetime.combine(day, time(hour, 0))
-        slots.append(
-            MeetingSlot(
-                slot_id=f"slot-{day.isoformat()}-{hour:02d}00",
-                start=start,
-                end=start + timedelta(minutes=45),
-                timezone=_TZ,
-                advisor="Mortgage advisor",
-            )
-        )
-    case.offered_meeting_slots = slots
+    month_slots = _monthly_meeting_slots(earliest)
+    if full_month:
+        slots = month_slots
+    else:
+        hour_range = {
+            "morning": range(8, 12),
+            "midday": range(11, 15),
+            "afternoon": range(13, 17),
+        }.get(preferred, range(13, 17))
+        slots = [
+            slot
+            for slot in month_slots
+            if slot.start.date() >= earliest and slot.start.hour in hour_range
+        ][:5]
+    offered_by_id = {slot.slot_id: slot for slot in case.offered_meeting_slots}
+    offered_by_id.update({slot.slot_id: slot for slot in slots})
+    case.offered_meeting_slots = sorted(offered_by_id.values(), key=lambda slot: slot.start)
+    summary = (
+        f"Selected weekday appointments are available between 08:00 and 17:00 in "
+        f"{earliest.strftime('%B %Y')}."
+        if full_month
+        else "Offered "
+        + ", ".join(s.start.strftime("%a %d %b %H:%M") for s in slots)
+        + " (earliest available)."
+    )
     return ToolOutcome(
         ok=True,
         result={"slots": [_slot_dict(s) for s in slots]},
-        summary="Offered "
-        + ", ".join(s.start.strftime("%a %d %b %H:%M") for s in slots)
-        + " (earliest available).",
+        summary=summary,
         service="Advisor calendar",
         label="Get available meeting times",
     )
+
+
+def _monthly_meeting_slots(month: date) -> list[MeetingSlot]:
+    slots: list[MeetingSlot] = []
+    day = month.replace(day=1)
+    while day.month == month.month:
+        week_index = (day.day - 1) // 7
+        available_weekdays = {0, 2, 4} if week_index % 2 == 0 else {1, 3}
+        if day.weekday() in available_weekdays:
+            hours = {
+                0: (8, 11, 15),
+                1: (9, 13, 16),
+                2: (10, 14),
+            }[day.day % 3]
+            for slot_hour in hours:
+                start = datetime.combine(day, time(slot_hour, 0))
+                slots.append(
+                    MeetingSlot(
+                        slot_id=f"slot-{day.isoformat()}-{slot_hour:02d}00",
+                        start=start,
+                        end=start + timedelta(minutes=45),
+                        timezone=_TZ,
+                        advisor="Mortgage advisor",
+                    )
+                )
+        day += timedelta(days=1)
+    return slots
 
 
 def _slot_dict(s: MeetingSlot) -> dict:
@@ -518,7 +553,7 @@ def get_customer_cards(engine: ConsentEngine, case: DemoCase, args: dict) -> Too
 
 
 # --------------------------------------------------------------------------- #
-# 9. block_card_and_order_replacement  (protected: block_card consent, card-scoped)
+# 9. block_card_and_order_replacement
 # --------------------------------------------------------------------------- #
 def block_card_and_order_replacement(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOutcome:
     _require_identified(case)
@@ -540,13 +575,6 @@ def block_card_and_order_replacement(engine: ConsentEngine, case: DemoCase, args
             idempotent_replay=True,
         )
 
-    consumed = engine.consume(
-        case,
-        ConsentAction.block_card,
-        resource_scope=card_id,
-        customer_id=case.customer_profile.customer_id,
-        consent_id=args.get("consent_id"),
-    )
     card.status = CardStatus.blocked
     order = ReplacementOrder(
         order_reference=f"RPL-{uuid.uuid4().hex[:8].upper()}",
@@ -562,8 +590,7 @@ def block_card_and_order_replacement(engine: ConsentEngine, case: DemoCase, args
         summary=f"Card ****{card.last_four} blocked and replacement {order.order_reference} ordered.",
         service="Card services",
         label="Block card & order replacement",
-        status=EventStatus.granted,
-        consent_consumed=consumed.consent_id,
+        status=EventStatus.completed,
     )
 
 

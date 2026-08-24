@@ -1,6 +1,9 @@
 """Document flow: confidence policy, both samples to terminal states, review, reuse."""
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
 from app.documents.samples import render_payslip_html
@@ -62,7 +65,7 @@ async def test_uploaded_document_returns_demo_extraction_for_review(d):
     assert case.accepted_income is None
 
 
-async def test_uploading_bundled_payslip_pdf_auto_accepts(d):
+async def test_uploading_bundled_payslip_pdf_requires_advisor_approval(d):
     # Uploading the genuine committed payslip PDF (no sample_key) is routed by an
     # exact content hash to the high-confidence straight-through path.
     from app.documents.samples import sample_pdf_path
@@ -75,11 +78,16 @@ async def test_uploading_bundled_payslip_pdf_auto_accepts(d):
         filename=pdf.name,
         sample_key=None,
     )
-    assert case.document_state is DocumentState.accepted_automatically
+    assert case.document_state is DocumentState.review_required
     assert case.uploaded_document.sample_key is None
-    assert case.accepted_income is not None
-    assert case.accepted_income.gross_salary_monthly == 96_000
-    assert case.accepted_income.net_salary_monthly == 62_400
+    assert case.accepted_income is None
+    assert case.extracted_income.gross_salary_monthly.normalized_value == 96_000
+    assert case.extracted_income.net_salary_monthly.normalized_value == 62_400
+
+    approved = await d.docs.review_approve()
+    assert approved.document_state is DocumentState.accepted_after_review
+    assert approved.accepted_income.gross_salary_monthly == 96_000
+    assert approved.accepted_income.net_salary_monthly == 62_400
 
 
 async def test_remove_clears_document_and_extracted_income(d):
@@ -144,6 +152,29 @@ async def test_review_reject_saves_no_income(d):
     case = await d.docs.review_reject()
     assert case.document_state is DocumentState.rejected_by_reviewer
     assert case.accepted_income is None
+
+
+def test_bank_extraction_output_has_complete_accepted_and_null_rejected_fields():
+    output_path = Path(__file__).parents[1] / "app" / "documents" / "extracted_payslips.json"
+    output = json.loads(output_path.read_text(encoding="utf-8"))
+    required = {
+        "employer_name",
+        "gross_salary_monthly",
+        "net_salary_monthly",
+        "employment_type",
+        "pay_date",
+    }
+
+    for payslip in output["payslips"]:
+        assert set(payslip["fields"]) == required
+        assert set(payslip["confidence"]) == required
+        if payslip["status"] == "accepted":
+            assert all(payslip["fields"][name] is not None for name in required)
+            assert all(payslip["confidence"][name] is not None for name in required)
+        else:
+            assert payslip["id"] == "emma"
+            assert all(payslip["fields"][name] is None for name in required)
+            assert all(payslip["confidence"][name] is None for name in required)
 
 
 async def test_epoch_guard_discards_result_when_reset_lands_mid_analysis(d):
