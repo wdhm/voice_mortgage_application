@@ -21,6 +21,7 @@ from ..domain.models import (
     ConsentAction,
     CreditResult,
     DemoCase,
+    DocumentState,
     IdentityStatus,
     MeetingSlot,
     ReplacementOrder,
@@ -577,6 +578,60 @@ def _block_result(card, order: ReplacementOrder) -> dict:
     }
 
 
+# --------------------------------------------------------------------------- #
+# 10. check_income_status  (read-only: report the payslip / income state)
+# --------------------------------------------------------------------------- #
+_ACCEPTED_DOC_STATES = {
+    DocumentState.accepted_automatically,
+    DocumentState.accepted_after_review,
+}
+
+
+def check_income_status(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOutcome:
+    """Report whether the customer's uploaded payslip is accepted and income verified.
+
+    Read-only and consent-free. Lets the agent confirm — with a genuine, trace-visible
+    read of case state — that a re-uploaded payslip is now readable/green, so it can tell
+    the customer the income requirement for her mortgage application is covered.
+    """
+    _require_identified(case)
+    state = case.document_state
+    accepted = state in _ACCEPTED_DOC_STATES
+    income = case.accepted_income
+    result = {
+        "document_state": state.value,
+        "income_verified": accepted,
+        "rejection_reason": case.rejection_reason,
+        "employer_name": income.employer_name if income else None,
+        "gross_salary_monthly": income.gross_salary_monthly if income else None,
+        "net_salary_monthly": income.net_salary_monthly if income else None,
+    }
+    if accepted:
+        summary = (
+            "Payslip accepted — income is verified. The income requirement for the "
+            "mortgage application is covered."
+        )
+    elif state == DocumentState.analysis_failed:
+        reason = case.rejection_reason or "the payslip could not be read."
+        nudge = "Ask the customer to re-upload a clear copy."
+        summary = f"Payslip not accepted — {reason}"
+        if nudge.lower() not in reason.lower():
+            summary = f"{summary} {nudge}"
+    elif state == DocumentState.empty:
+        summary = "No payslip has been uploaded yet. Ask the customer to upload a payslip."
+    elif state == DocumentState.review_required:
+        summary = "Payslip is awaiting human review; income is not yet verified."
+    else:
+        summary = f"Payslip status: {state.value}; income is not yet verified."
+    return ToolOutcome(
+        ok=True,
+        result=result,
+        summary=summary,
+        service="Document intelligence",
+        label="Check income status",
+    )
+
+
 # Registry name -> handler.
 HANDLERS = {
     "identify_customer_with_digitald": identify_customer_with_digitald,
@@ -589,4 +644,5 @@ HANDLERS = {
     "book_meeting": book_meeting,
     "get_customer_cards": get_customer_cards,
     "block_card_and_order_replacement": block_card_and_order_replacement,
+    "check_income_status": check_income_status,
 }

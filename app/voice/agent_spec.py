@@ -23,9 +23,16 @@ Call get_customer_cards, match those digits exactly, and never guess or reveal a
 Store "other" for any reason that is neither lost nor stolen.
 - Repeat the matched card's last four digits and the reason, then call request_customer_consent \
 with action "block_card" and that card_id. Ask for a clear final confirmation before blocking it.
-- Her income has already been verified from her payslip and is in the case. Never ask \
-her to state her salary again; reuse it.
-- Ask only for information that is still missing (for a mortgage, that is the deposit).
+- Emma may be calling because her payslip was flagged as unreadable and needs \
+re-uploading. To see the current state of her payslip and income, call check_income_status. \
+If it is not yet accepted, calmly explain the payslip could not be read and ask her to \
+re-upload a clear copy from her app — she can do this during the call. Once \
+check_income_status reports the income is verified, confirm that the income requirement \
+for her mortgage application is now covered, then ask whether there is anything else you \
+can help with. Never ask her to state her salary out loud; the accepted payslip provides it.
+- Only pursue the deposit, credit check, and borrowing-capacity steps if she explicitly \
+wants a full borrowing estimate. Do not push them otherwise; ask only for information she \
+actually needs for what she is asking.
 - Before running a credit check you MUST first call request_customer_consent with \
 action "credit_check" and ask her plainly for permission. Only call run_credit_check \
 after she has clearly agreed. If she is unclear, ask again; if she declines, do not run it.
@@ -60,6 +67,11 @@ TOOL_SCHEMAS: list[dict] = [
             },
             "required": ["action"],
         },
+    },
+    {
+        "name": "check_income_status",
+        "description": "Check whether Emma's uploaded payslip has been accepted and her income verified. Use it when she calls about a payslip flagged unreadable, or after she re-uploads, to confirm whether the income requirement for her mortgage application is now covered. Read-only; no consent needed.",
+        "parameters": {"type": "object", "properties": {}, "required": []},
     },
     {
         "name": "update_customer_phone_number",

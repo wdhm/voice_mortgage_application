@@ -209,3 +209,36 @@ async def test_within_guideline_clears_summary_flag(stack):
     assert cap.result["dtiFlag"] == "within_guideline"
     assert summary.result["flags"] == []
     assert summary.result["recommendedAction"] == "standard_review"
+
+
+async def test_check_income_status_reports_rejected_then_verified(stack):
+    await _identify(stack)
+    # Fresh canonical case: Emma's payslip is seeded as auto-rejected (blurred scan).
+    rejected = await stack.tools.dispatch("check_income_status", {})
+    assert rejected.ok
+    assert rejected.result["income_verified"] is False
+    assert rejected.result["document_state"] == "analysis_failed"
+    assert rejected.result["rejection_reason"]
+    assert "re-upload" in rejected.summary.lower()
+
+    # After a clean payslip is accepted, the same read reports income verified.
+    case = stack.repo.get()
+    apply_accepted_income_emma(case)
+    stack.repo.set(case)
+    verified = await stack.tools.dispatch("check_income_status", {})
+    assert verified.ok
+    assert verified.result["income_verified"] is True
+    assert verified.result["document_state"] == "accepted_automatically"
+    assert verified.result["rejection_reason"] is None
+    assert verified.result["net_salary_monthly"] == 62_400
+    assert "covered" in verified.summary.lower()
+    assert verified.label == "Check income status"
+
+
+async def test_check_income_status_requires_identity(stack):
+    case = stack.repo.get()
+    case.identity_status = IdentityStatus.unidentified
+    stack.repo.set(case)
+    out = await stack.tools.dispatch("check_income_status", {})
+    assert not out.ok
+    assert "tool.blocked_by_policy" in stack.event_types()
