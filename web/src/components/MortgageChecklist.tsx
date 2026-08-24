@@ -5,17 +5,12 @@ const REQUIREMENTS = [
     completedBeforeJourney: true,
   },
   {
-    title: "Identity verification",
+    title: "Identity check",
     description: "Identity confirmed securely",
     completedBeforeJourney: true,
   },
   {
-    title: "Employment & commitments",
-    description: "Employment, expenses and existing loans",
-    completedBeforeJourney: true,
-  },
-  {
-    title: "Income documents",
+    title: "Income verification",
     description: "Upload a payslip for structured extraction",
     step: 1,
   },
@@ -29,16 +24,34 @@ const REQUIREMENTS = [
     description: "Advisor reviews the case and makes the final decision",
     step: 3,
   },
+  {
+    title: "Appointment",
+    description: "Meet a mortgage advisor to discuss the application",
+    step: 4,
+  },
 ];
 
 export function MortgageChecklist({
   activeStep,
+  incomeVerified,
+  affordabilityComplete,
+  bankReviewComplete,
+  appointmentComplete,
   onOpenStep,
 }: {
   activeStep: number;
+  incomeVerified: boolean;
+  affordabilityComplete: boolean;
+  bankReviewComplete: boolean;
+  appointmentComplete: boolean;
   onOpenStep: (step: number) => void;
 }) {
-  const completed = 3 + Math.max(0, activeStep - 1);
+  const completed =
+    2 +
+    (incomeVerified ? 1 : 0) +
+    (affordabilityComplete ? 1 : 0) +
+    (bankReviewComplete ? 1 : 0) +
+    (appointmentComplete ? 1 : 0);
 
   return (
     <section className="mortgage-checklist" aria-labelledby="mortgage-checklist-title">
@@ -57,9 +70,23 @@ export function MortgageChecklist({
       </div>
       <ol>
         {REQUIREMENTS.map((item) => {
-          const done = item.completedBeforeJourney || (item.step !== undefined && item.step < activeStep);
-          const current = item.step === activeStep;
-          const openable = item.step !== undefined;
+          const done =
+            item.completedBeforeJourney ||
+            (item.step === 1
+              ? incomeVerified
+              : item.step === 2
+                ? affordabilityComplete
+                : item.step === 3
+                  ? bankReviewComplete
+                  : item.step === 4
+                    ? appointmentComplete
+                    : false);
+          const current = !done && item.step === activeStep;
+          const openable =
+            item.step === 1 ||
+            (item.step === 2 && incomeVerified) ||
+            (item.step === 3 && affordabilityComplete) ||
+            (item.step === 4 && bankReviewComplete);
           const className = done ? "done" : current ? "current" : "upcoming";
           const body = (
             <>
@@ -85,5 +112,65 @@ export function MortgageChecklist({
         })}
       </ol>
     </section>
+  );
+}
+
+const APPLICATION_STAGES = [
+  { step: 1, title: "Income verification" },
+  { step: 2, title: "Credit & affordability" },
+  { step: 3, title: "Bank review" },
+  { step: 4, title: "Appointment" },
+];
+
+export function MortgageProgress({
+  activeStep,
+  incomeVerified,
+  affordabilityComplete,
+  bankReviewComplete,
+  appointmentComplete,
+  onOpenStep,
+}: {
+  activeStep: number;
+  incomeVerified: boolean;
+  affordabilityComplete: boolean;
+  bankReviewComplete: boolean;
+  appointmentComplete: boolean;
+  onOpenStep: (step: number) => void;
+}) {
+  const completed = [incomeVerified, affordabilityComplete, bankReviewComplete, appointmentComplete];
+
+  return (
+    <nav className="mortgage-progress" aria-label="Mortgage application progress">
+      <div className="mortgage-progress-heading">
+        <strong>Application progress</strong>
+        <span>Step {activeStep} of 4</span>
+      </div>
+      <ol>
+        {APPLICATION_STAGES.map((stage, index) => {
+          const done = completed[index];
+          const current = stage.step === activeStep;
+          const unlocked =
+            stage.step === 1 ||
+            (stage.step === 2 && incomeVerified) ||
+            (stage.step === 3 && affordabilityComplete) ||
+            (stage.step === 4 && bankReviewComplete);
+          return (
+            <li
+              key={stage.step}
+              className={`${done ? "complete" : "incomplete"} ${current ? "active" : ""}`}
+              aria-current={current ? "step" : undefined}
+            >
+              <button type="button" onClick={() => onOpenStep(stage.step)} disabled={!unlocked}>
+                <span className="progress-check" aria-hidden>{done ? "✓" : stage.step}</span>
+                <span>
+                  <strong>{stage.title}</strong>
+                  <small>{done ? "Complete" : current ? "In progress" : unlocked ? "Ready" : "Locked"}</small>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }

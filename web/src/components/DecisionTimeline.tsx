@@ -67,6 +67,7 @@ function deriveNodes(
   doc: DocumentProjection | null,
   caseView: DemoCaseView | null,
   refreshKey: number,
+  embedded: boolean,
 ): NodeView[] {
   const completed = (label: string) =>
     events.some((e) => e.event_type === "tool.completed" && e.display.label === label);
@@ -105,8 +106,23 @@ function deriveNodes(
       label: "Income",
       subtitle: "Verified from the payslip",
       status: incomeStatus,
-      // The full advisor income evidence + structured JSON + source preview.
-      body: <DocumentPanel role="advisor" refreshKey={refreshKey} />,
+      // When standalone, host the full advisor income evidence + JSON. When
+      // embedded in the bank workspace (which already shows the DocumentPanel in
+      // its Income step) render a compact income summary to avoid duplication.
+      body: embedded ? (
+        incomeAccepted && fields ? (
+          <div className="dt-data">
+            <DataRow k="Gross (monthly)" v={fields.gross_salary_monthly?.value ?? "—"} />
+            <DataRow k="Net (monthly)" v={fields.net_salary_monthly?.value ?? "—"} />
+            <DataRow k="Employer" v={fields.employer_name?.value ?? "—"} />
+            <DataRow k="Provenance" v={fields.gross_salary_monthly?.provenance ?? "—"} />
+          </div>
+        ) : (
+          <Pending text="Populates when the payslip is accepted." />
+        )
+      ) : (
+        <DocumentPanel role="advisor" refreshKey={refreshKey} />
+      ),
     },
     {
       key: "employment",
@@ -216,7 +232,13 @@ function TimelineNode({ node }: { node: NodeView }) {
   );
 }
 
-export function DecisionTimeline({ events }: { events: TimelineEvent[] }) {
+export function DecisionTimeline({
+  events,
+  embedded = false,
+}: {
+  events: TimelineEvent[];
+  embedded?: boolean;
+}) {
   const [doc, setDoc] = useState<DocumentProjection | null>(null);
   const [caseView, setCaseView] = useState<DemoCaseView | null>(null);
 
@@ -226,12 +248,13 @@ export function DecisionTimeline({ events }: { events: TimelineEvent[] }) {
     getCase().then(setCaseView).catch(() => setCaseView(null));
   }, [refreshKey]);
 
-  const nodes = deriveNodes(events, doc, caseView, refreshKey);
+  const nodes = deriveNodes(events, doc, caseView, refreshKey, embedded);
   const fulfilledCount = nodes.filter((n) => n.status === "fulfilled").length;
   const allFulfilled = fulfilledCount === nodes.length;
+  const summary = caseView?.advisor_summary ?? null;
 
   return (
-    <div className="decision-timeline">
+    <div className={`decision-timeline${embedded ? " embedded" : ""}`}>
       <div className="dt-head">
         <div>
           <p className="pane-title">Decision timeline</p>
@@ -263,7 +286,21 @@ export function DecisionTimeline({ events }: { events: TimelineEvent[] }) {
           <span className="dt-chevron" aria-hidden>⌄</span>
         </summary>
         <div className="dt-expand">
-          <SummaryPanel refreshKey={refreshKey} />
+          {embedded ? (
+            summary ? (
+              <div className="dt-data">
+                <DataRow k="Assessment" v={summary.status_text} />
+                <DataRow k="Decision" v={summary.decision_text} />
+                <p className="dt-decision-hint">
+                  Full advisor summary is in the Advisor review step below.
+                </p>
+              </div>
+            ) : (
+              <Pending text="Populates when the advisor summary is written." />
+            )
+          ) : (
+            <SummaryPanel refreshKey={refreshKey} />
+          )}
         </div>
       </details>
     </div>

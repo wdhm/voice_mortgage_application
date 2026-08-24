@@ -67,7 +67,18 @@ class CardStatus(str, Enum):
 # --------------------------------------------------------------------------- #
 class CustomerProfile(BaseModel):
     customer_id: str
+    customer_number: str
     display_name: str
+    phone_number: str
+    email: str
+    street_address: str
+    postal_code: str
+    city: str
+    country: str
+    preferred_language: str = "English"
+    customer_since: date
+    contact_details_updated_at: datetime | None = None
+    contact_details_updated_by: str | None = None
     employer_name: str | None = None
     relationship_summary: str | None = None
     existing_car_loan_balance: int | None = None  # SEK
@@ -192,6 +203,9 @@ class ReplacementOrder(BaseModel):
 
 class AdvisorSummary(BaseModel):
     sections: dict = Field(default_factory=dict)
+    summary: str = ""
+    flags: list[str] = Field(default_factory=list)
+    recommended_action: str = "standard_review"
     final_decision_required: bool = True
     status_text: str = "Preliminary assessment: looks supportable"
     decision_text: str = "Final decision: advisor required"

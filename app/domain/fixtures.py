@@ -6,7 +6,7 @@ and both cards are active with no replacement order.
 """
 from __future__ import annotations
 
-from datetime import UTC
+from datetime import UTC, date
 
 from .models import (
     AcceptedIncome,
@@ -36,7 +36,16 @@ def build_canonical_case(session_id: str, epoch: int = 0) -> DemoCase:
         document_state=DocumentState.empty,
         customer_profile=CustomerProfile(
             customer_id=CUSTOMER_ID,
+            customer_number="1048 572 963",
             display_name="Emma Lindberg",
+            phone_number="+46 70 123 45 67",
+            email="emma.lindberg@example.com",
+            street_address="Parkvägen 12",
+            postal_code="183 34",
+            city="Täby",
+            country="Sweden",
+            preferred_language="English",
+            customer_since=date(2018, 4, 12),
             employer_name="Northstar AB",
             relationship_summary="Existing Bank Alfa customer with an active car loan.",
             existing_car_loan_balance=180_000,

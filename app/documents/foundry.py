@@ -1,4 +1,4 @@
-"""Real Microsoft Foundry Content Understanding analyzer (keyless).
+"""Real Microsoft Foundry Content Understanding analyzer.
 
 This is the production target behind the same DocumentAnalyzer port. It is NOT
 the recorded-demo path (DOCUMENT_PROVIDER=simulated is), but it lets an operator
@@ -13,8 +13,10 @@ per-field confidence enabled via the estimateFieldSourceAndConfidence feature.
 from __future__ import annotations
 
 import asyncio
+import base64
 
 import httpx
+from azure.core.exceptions import ClientAuthenticationError
 
 from ..config import settings
 from .port import REQUIRED_FIELDS, AnalysisError, AnalyzerResult, FieldExtraction
@@ -33,13 +35,20 @@ class FoundryDocumentAnalyzer:
         self._api_version = settings.cu_api_version
         self._credential = None  # lazily created; avoids az login at import time
 
-    async def _token(self) -> str:
+    async def _auth_headers(self) -> dict[str, str]:
+        if settings.azure_ai_access_token is not None:
+            return {"Authorization": f"Bearer {settings.azure_ai_access_token.get_secret_value()}"}
+        if settings.azure_ai_key is not None:
+            return {"Ocp-Apim-Subscription-Key": settings.azure_ai_key.get_secret_value()}
         if self._credential is None:
             from azure.identity.aio import DefaultAzureCredential
 
-            self._credential = DefaultAzureCredential()
-        token = await self._credential.get_token(_SCOPE)
-        return token.token
+            self._credential = DefaultAzureCredential(process_timeout=60)
+        try:
+            token = await self._credential.get_token(_SCOPE)
+        except ClientAuthenticationError as exc:
+            raise AnalysisError("Azure authentication failed") from exc
+        return {"Authorization": f"Bearer {token.token}"}
 
     async def analyze(
         self,
@@ -53,13 +62,11 @@ class FoundryDocumentAnalyzer:
             f"{self._endpoint}/contentunderstanding/analyzers/{self._analyzer_id}:analyze"
             f"?api-version={self._api_version}&features=estimateFieldSourceAndConfidence"
         )
-        headers = {
-            "Authorization": f"Bearer {await self._token()}",
-            "Content-Type": content_type or "application/octet-stream",
-        }
+        headers = await self._auth_headers()
+        payload = {"inputs": [{"data": base64.b64encode(content).decode("ascii")}]}
         try:
             async with httpx.AsyncClient(timeout=_POLL_TIMEOUT_S) as client:
-                resp = await client.post(url, headers=headers, content=content)
+                resp = await client.post(url, headers=headers, json=payload)
                 if resp.status_code not in (200, 202):
                     raise AnalysisError(f"analyze failed: {resp.status_code} {resp.text[:200]}")
                 result = await self._resolve(client, resp, headers)
@@ -80,7 +87,7 @@ class FoundryDocumentAnalyzer:
         if not op_url:
             raise AnalysisError("missing Operation-Location for async analyze")
         deadline = asyncio.get_event_loop().time() + _POLL_TIMEOUT_S
-        poll_headers = {"Authorization": headers["Authorization"]}
+        poll_headers = headers
         while True:
             poll = await client.get(op_url, headers=poll_headers)
             body = poll.json()
@@ -101,10 +108,20 @@ class FoundryDocumentAnalyzer:
         out: dict[str, FieldExtraction] = {}
         for name in REQUIRED_FIELDS:
             f = raw.get(name) or {}
-            value = f.get("valueString") or f.get("content") or f.get("value")
-            normalized = f.get("valueNumber", f.get("valueDate", value))
+            typed_value = next(
+                (
+                    f[key]
+                    for key in ("valueString", "valueNumber", "valueDate", "content", "value")
+                    if f.get(key) is not None
+                ),
+                None,
+            )
+            normalized = next(
+                (f[key] for key in ("valueNumber", "valueDate", "valueString", "value") if f.get(key) is not None),
+                typed_value,
+            )
             out[name] = FieldExtraction(
-                value=str(value) if value is not None else None,
+                value=str(typed_value) if typed_value is not None else None,
                 normalized_value=normalized,
                 confidence=f.get("confidence"),
                 source_grounding=(f.get("source") or None),

@@ -3,6 +3,7 @@ import {
   getDocumentState,
   getExtractionJson,
   previewUrl,
+  removeDocument,
   reviewApprove,
   reviewEdit,
   reviewReject,
@@ -44,9 +45,11 @@ function confClass(f: ExtractionField): string {
 export function DocumentPanel({
   role,
   refreshKey = 0,
+  onContinue,
 }: {
   role: AppRole;
   refreshKey?: number;
+  onContinue?: () => void;
 }) {
   const [doc, setDoc] = useState<DocumentProjection | null>(null);
   const [busy, setBusy] = useState(false);
@@ -71,16 +74,34 @@ export function DocumentPanel({
     }
   };
 
+  const onRemove = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      setDoc(await removeDocument());
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return isAdvisor ? (
     <AdvisorPanel doc={doc} setDoc={setDoc} busy={busy} setBusy={setBusy} error={error} setError={setError} />
   ) : (
-    <CustomerUpload doc={doc} busy={busy} error={error} onUpload={onUpload} />
+    <CustomerUpload
+      doc={doc}
+      busy={busy}
+      error={error}
+      onUpload={onUpload}
+      onRemove={onRemove}
+      onContinue={onContinue}
+    />
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Customer: upload only. The customer submits a payslip; all Content   */
-/* Understanding processing and results live in the bank (advisor) view. */
+/* Customer: upload plus a clear summary of the required and extracted data. */
 /* ------------------------------------------------------------------ */
 
 function CustomerUpload({
@@ -88,11 +109,15 @@ function CustomerUpload({
   busy,
   error,
   onUpload,
+  onRemove,
+  onContinue,
 }: {
   doc: DocumentProjection | null;
   busy: boolean;
   error: string | null;
   onUpload: (file: File) => void;
+  onRemove: () => void;
+  onContinue?: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -101,6 +126,8 @@ function CustomerUpload({
   const uploaded = doc?.uploaded_document ?? null;
   const analyzing = state === "analyzing";
   const submitted = uploaded !== null && !analyzing;
+  const fields = doc?.fields ?? null;
+  const approved = state === "accepted_automatically" || state === "accepted_after_review";
 
   const pick = () => !busy && inputRef.current?.click();
 
@@ -122,9 +149,11 @@ function CustomerUpload({
     <div className="doc-panel">
       <div className="doc-head">
         <h2>Income verification</h2>
+        {approved && <span className="doc-status verified">✓ Approved</span>}
       </div>
       <p className="doc-sub">
-        Upload your latest payslip. Bank Alfa verifies your income from the document you submit.
+        Upload your latest payslip. We will read the five required income details below and show you
+        what was found.
       </p>
 
       {error && <div className="doc-error">{error}</div>}
@@ -179,6 +208,19 @@ function CustomerUpload({
 
       {submitted && (
         <>
+          {approved && (
+            <div className="income-approved">
+              <div>
+                <strong>Income verification approved</strong>
+                <span>All required payslip information was found and accepted.</span>
+              </div>
+              {onContinue && (
+                <button type="button" className="icon-btn primary" onClick={onContinue}>
+                  Continue to credit check →
+                </button>
+              )}
+            </div>
+          )}
           <div className={`upload-receipt ${receipt.tone}`}>
             <span className="upload-file-icon" aria-hidden>
               {uploaded?.content_type === "application/pdf" ? "PDF" : "DOC"}
@@ -188,11 +230,60 @@ function CustomerUpload({
               <small>{receipt.text}</small>
             </div>
           </div>
-          <button type="button" className="icon-btn upload-again" onClick={pick} disabled={busy}>
-            Upload a different file
-          </button>
+          <div className="upload-actions">
+            <button type="button" className="icon-btn" onClick={pick} disabled={busy}>
+              Upload a different file
+            </button>
+            <button type="button" className="icon-btn remove-upload" onClick={onRemove} disabled={busy}>
+              Remove
+            </button>
+          </div>
         </>
       )}
+
+      <div className="customer-extraction">
+        <div className="customer-extraction-head">
+          <h3>{fields ? "Information autofilled from your payslip" : "Information we will autofill"}</h3>
+          <span>{fields ? "Extracted from your PDF" : "After upload"}</span>
+        </div>
+        <table className="field-table">
+          <thead>
+            <tr>
+              <th>Payslip information</th>
+              <th>{fields ? "Autofilled value" : "Status"}</th>
+              {fields && <th className="fconf">Result</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {FIELD_ORDER.map((name) => {
+              const field = fields?.[name];
+              return (
+                <tr key={name} className={field && !field.passes ? "flagged" : ""}>
+                  <td className="fname">{FIELD_LABELS[name]}</td>
+                  <td className="fval">{field ? field.value ?? "Not found" : "Required"}</td>
+                  {fields && (
+                    <td className={`fconf ${field?.passes ? "ok" : "low"}`}>
+                      {field?.passes ? "✓ Found" : "Needs review"}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {state === "review_required" && (
+          <p className="customer-review-note">
+            Some details could not be read confidently. A Bank Alfa advisor will review the highlighted
+            information before your application continues.
+          </p>
+        )}
+        {doc?.provider === "simulated" && fields && (
+          <p className="simulation-note">
+            Demo mode: this local preview uses simulated extraction. Set DOCUMENT_PROVIDER=foundry for live
+            Microsoft Foundry OCR.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

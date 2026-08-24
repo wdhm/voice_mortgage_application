@@ -13,6 +13,10 @@ systems are mocked and an advisor always owns the final lending decision.
 Rules you must always follow:
 - The caller is the known demo customer Emma Lindberg. The server has already loaded her \
 safe banking profile for this call. Greet her by name and ask how you can help.
+- When she asks to change her phone number, ask for the new number if it is missing. \
+Read the full new number back to her and ask for a clear confirmation. Only after she \
+confirms, call update_customer_phone_number with that exact number. Tell her when the \
+profile has been updated. Do not change other personal details.
 - When she asks to block a card, ask for the last four digits before retrieving her cards. \
 Call get_customer_cards, match those digits exactly, and never guess or reveal another card.
 - After matching the card, ask whether it was lost, stolen, or needs blocking for another reason. \
@@ -30,6 +34,11 @@ after she has clearly agreed. If she is unclear, ask again; if she declines, do 
 block_card_and_order_replacement after she clearly confirms. Pass the previously stated reason.
 - Explain mortgage figures as preliminary and illustrative. Never say or imply the \
 mortgage is finally approved; an advisor decides.
+- Immediately after calculate_borrowing_capacity, explain its result in this exact order: \
+(1) whether the monthly budget remains affordable at the 7% stress rate, in plain language; \
+(2) only when dtiFlag is "above_soft_guideline", calmly mention the DTI ratio as a note \
+for the advisor; (3) always state that the result is preliminary and a human advisor makes \
+the final decision. Never use the words "approved" or "denied" for the mortgage.
 - Handle both the mortgage request and, if she raises it, a stolen-card block in the \
 same conversation. Keep prior context; do not restart.
 - Never read out full card numbers or unnecessary personal data.
@@ -53,9 +62,32 @@ TOOL_SCHEMAS: list[dict] = [
         },
     },
     {
+        "name": "update_customer_phone_number",
+        "description": "Update Emma's registered Swedish phone number after you have read the complete new number back and she has clearly confirmed it.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "phone_number": {
+                    "type": "string",
+                    "description": "The complete confirmed Swedish phone number, including area/mobile prefix.",
+                },
+            },
+            "required": ["phone_number"],
+        },
+    },
+    {
         "name": "run_credit_check",
         "description": "Run the credit check. Only call after the customer has clearly consented to a credit check.",
-        "parameters": {"type": "object", "properties": {}, "required": []},
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "customerId": {
+                    "type": "string",
+                    "description": "Known customer id. The server validates and injects the active customer.",
+                }
+            },
+            "required": [],
+        },
     },
     {
         "name": "calculate_borrowing_capacity",
@@ -63,17 +95,35 @@ TOOL_SCHEMAS: list[dict] = [
         "parameters": {
             "type": "object",
             "properties": {
-                "property_price": {"type": "integer", "description": "Purchase price in SEK."},
+                "purchasePrice": {"type": "integer", "description": "Purchase price in SEK."},
                 "deposit": {"type": "integer", "description": "Customer deposit in SEK."},
+                "income": {
+                    "type": "integer",
+                    "description": "Verified monthly income. The server uses the accepted payslip value.",
+                },
+                "existingDebt": {
+                    "type": "object",
+                    "description": "Existing debt. The server uses the trusted credit-check result.",
+                    "properties": {"carLoan": {"type": "integer"}},
+                },
                 "location": {"type": "string"},
             },
-            "required": ["property_price", "deposit"],
+            "required": ["purchasePrice", "deposit"],
         },
     },
     {
         "name": "write_advisor_summary",
         "description": "Produce the structured advisor summary for human handoff after the capacity calculation.",
-        "parameters": {"type": "object", "properties": {}, "required": []},
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "caseId": {
+                    "type": "string",
+                    "description": "Active case id. The server validates and injects it.",
+                }
+            },
+            "required": [],
+        },
     },
     {
         "name": "get_available_meeting_times",

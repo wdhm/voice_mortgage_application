@@ -130,6 +130,12 @@ export async function uploadDocument(file: File): Promise<DocumentProjection> {
   return r.json();
 }
 
+export async function removeDocument(): Promise<DocumentProjection> {
+  const r = await fetch("/api/documents/upload", { method: "DELETE" });
+  if (!r.ok) throw new Error((await r.json()).detail ?? "Remove failed");
+  return r.json();
+}
+
 export async function reviewEdit(field: string, value: string): Promise<DocumentProjection> {
   const r = await fetch("/api/documents/review/edit", {
     method: "POST",
@@ -211,7 +217,14 @@ export interface CapacityMetrics {
   existing_debt_payment_monthly: number;
   total_monthly_costs: number;
   kalp_surplus_monthly: number;
-  [k: string]: number;
+  amortization_tier: string;
+  stress_test_rate: number;
+  monthly_stressed_payment: number;
+  living_cost_estimate: number;
+  net_after_stress: number;
+  dti_ratio: number;
+  dti_flag: "above_soft_guideline" | "within_guideline";
+  verdict: "not_affordable_at_stress_rate" | "affordable_with_note" | "affordable";
 }
 
 export interface AdvisorSummarySections {
@@ -232,6 +245,9 @@ export interface AdvisorSummarySections {
 
 export interface AdvisorSummary {
   sections: AdvisorSummarySections;
+  summary: string;
+  flags: string[];
+  recommended_action: "advisor_review" | "standard_review";
   final_decision_required: boolean;
   status_text: string;
   decision_text: string;
@@ -245,25 +261,39 @@ export interface CaseCard {
   status: CardStatus;
 }
 
-export interface CapacityResult {
-  inputs: Record<string, unknown>;
-  metrics: CapacityMetrics;
-  outcome: string;
-  assumptions: string[];
-  caveats: string[];
-  calculated_at: string;
-}
-
 export interface DemoCaseView {
+  case_id: string;
   identity_status: IdentityStatus;
+  document_state: DocumentState;
   customer_profile: {
+    customer_id: string;
+    customer_number: string;
     display_name: string;
+    phone_number: string;
+    email: string;
+    street_address: string;
+    postal_code: string;
+    city: string;
+    country: string;
+    preferred_language: string;
+    customer_since: string;
+    contact_details_updated_at: string | null;
+    contact_details_updated_by: string | null;
+    existing_products?: string[];
+    // Additive fields used by the decision timeline's Employment node.
     employer_name?: string;
     relationship_summary?: string;
-    existing_products?: string[];
   } & Record<string, unknown>;
-  credit_result: { score?: number; band?: string } & Record<string, unknown> | null;
-  capacity_result: CapacityResult | null;
+  credit_result: {
+    score: number;
+    max_score: number;
+    risk_band: string;
+    existing_debt_balance: number;
+    existing_debt_payment: number;
+    defaults: string;
+    source: string;
+  } | null;
+  capacity_result: { metrics: CapacityMetrics } | null;
   booked_meeting:
     | { slot: { slot_id: string; start: string; advisor: string }; booking_reference: string; purpose: string }
     | null;
@@ -275,5 +305,24 @@ export interface DemoCaseView {
 
 export async function getCase(): Promise<DemoCaseView> {
   const r = await fetch("/api/case");
+  return r.json();
+}
+
+export interface CreditReportResponse {
+  status: "complete";
+  consent_status: "consumed";
+  credit_report: Record<string, unknown>;
+}
+
+export async function approveAndFetchCreditReport(): Promise<CreditReportResponse> {
+  const r = await fetch("/api/mortgage/credit-report", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ approved: true }),
+  });
+  if (!r.ok) {
+    const body = await r.json().catch(() => ({}));
+    throw new Error(body.detail ?? "Unable to retrieve the credit report.");
+  }
   return r.json();
 }

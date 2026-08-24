@@ -1,6 +1,7 @@
 """Application configuration, loaded from environment / .env (keyless auth)."""
 from __future__ import annotations
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,17 +10,19 @@ class Settings(BaseSettings):
 
     # Microsoft Foundry (Azure AI Services)
     foundry_endpoint: str = "https://foundry-mortgage.cognitiveservices.azure.com/"
+    azure_ai_access_token: SecretStr | None = None
+    azure_ai_key: SecretStr | None = None
     voicelive_model: str = "gpt-realtime-1.5"
     voicelive_api_version: str = "2026-07-15"
     voicelive_voice: str = "en-US-AvaNeural"
 
     # Content Understanding
     cu_api_version: str = "2025-11-01"
-    cu_analyzer_id: str = "bankalfa-payslip"
+    cu_analyzer_id: str = "bankalfa_payslip"
 
     # Provider selection: "foundry" (real Azure) or "simulated" (deterministic, offline)
     voice_provider: str = "foundry"
-    document_provider: str = "foundry"
+    document_provider: str = "simulated"
 
     # Text-to-speech for the assistant's spoken replies: "foundry" (Azure neural
     # via the same keyless Foundry endpoint) or "off" (browser speech handles it).
