@@ -3031,6 +3031,102 @@ button.checklist-step:hover {
   gap: 12px;
   padding: 18px;
 }
+.appointment-month-weekdays,
+.appointment-month-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.appointment-month-weekdays {
+  border-bottom: 1px solid var(--border);
+  background: #f6f8f7;
+}
+.appointment-month-weekdays span {
+  padding: 9px 6px;
+  color: var(--ink-faint);
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+}
+.appointment-month-day {
+  min-height: 94px;
+  padding: 8px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.appointment-month-day:nth-child(5n) { border-right: 0; }
+.appointment-month-day:nth-last-child(-n + 5) { border-bottom: 0; }
+.appointment-month-day.outside { background: #f8f9f8; }
+.appointment-month-day.has-slots { background: #f7fbfa; }
+.appointment-day-number {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 650;
+}
+.appointment-month-slot {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px;
+  border: 1px solid rgba(8, 127, 120, 0.25);
+  border-radius: 7px;
+  background: rgba(8, 127, 120, 0.08);
+  color: var(--verified-teal);
+  text-align: left;
+}
+.appointment-month-slot strong { font-size: 11px; }
+.appointment-month-slot small {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+button.appointment-month-slot {
+  font: inherit;
+  cursor: pointer;
+}
+button.appointment-month-slot:hover {
+  border-color: var(--verified-teal);
+  background: rgba(8, 127, 120, 0.14);
+}
+.appointment-month-slot.booked {
+  border-color: var(--verified-teal);
+  background: var(--verified-teal);
+  color: #fff;
+}
+.appointment-time-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.appointment-time-chip {
+  padding: 4px 6px;
+  border: 1px solid rgba(8, 127, 120, 0.28);
+  border-radius: 6px;
+  background: rgba(8, 127, 120, 0.08);
+  color: var(--verified-teal);
+  font: inherit;
+  font-size: 9px;
+  font-weight: 650;
+}
+button.appointment-time-chip { cursor: pointer; }
+button.appointment-time-chip:hover { border-color: var(--verified-teal); }
+.appointment-time-chip.booked {
+  border-color: var(--verified-teal);
+  background: var(--verified-teal);
+  color: #fff;
+}
+.appointment-availability-label {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink-faint);
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
 .appointment-day {
   display: grid;
   grid-template-columns: 58px minmax(0, 1fr);

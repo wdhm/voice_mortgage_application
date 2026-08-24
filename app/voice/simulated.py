@@ -126,7 +126,8 @@ class SimulatedVoiceSession:
         if status.result.get("income_verified"):
             await self._host.say(
                 "Your payslip has now been approved and your income is verified. "
-                "Is there anything else I can help you with?"
+                "The only step left for you is to book an appointment with a mortgage advisor. "
+                "Would you like me to find an available time?"
             )
         elif state == "review_required":
             await self._host.say(
@@ -268,7 +269,9 @@ class SimulatedVoiceSession:
         )
         if booked.ok:
             await self._host.say(
-                "You're booked with an advisor on Monday 21 September at 15:00. Is there anything else I can help with?"
+                "You're booked with a mortgage advisor on Monday 21 September at 15:00. "
+                "Your part of the application is now complete. The advisor will review your "
+                "application and make the final lending decision at the appointment."
             )
             self._phase = Phase.AWAIT_CARD
         else:

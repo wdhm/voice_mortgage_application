@@ -52,13 +52,29 @@ export function AppointmentPanel({
     ? [...slots, meeting.slot]
     : slots;
   const firstSlot = visibleSlots[0];
-  const weekHeading = firstSlot
-    ? `Week of ${new Date(firstSlot.start).toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })}`
-    : "Available appointments";
+  const calendarDate = firstSlot ? new Date(firstSlot.start) : new Date();
+  const calendarYear = calendarDate.getFullYear();
+  const calendarMonth = calendarDate.getMonth();
+  const monthHeading = calendarDate.toLocaleDateString("en-GB", {
+    month: "long",
+    year: "numeric",
+  });
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const firstDayOfWeek = new Date(calendarYear, calendarMonth, 1).getDay();
+  const leadingWeekdays = firstDayOfWeek === 0 || firstDayOfWeek === 6 ? 0 : firstDayOfWeek - 1;
+  const calendarDays: Array<number | null> = Array.from({ length: leadingWeekdays }, () => null);
+  for (let day = 1; day <= daysInMonth; day++) {
+    const weekday = new Date(calendarYear, calendarMonth, day).getDay();
+    if (weekday !== 0 && weekday !== 6) calendarDays.push(day);
+  }
+  while (calendarDays.length % 5 !== 0) calendarDays.push(null);
+  const slotsByDay = visibleSlots.reduce<Map<number, AppointmentSlot[]>>((grouped, slot) => {
+    const start = new Date(slot.start);
+    if (start.getFullYear() === calendarYear && start.getMonth() === calendarMonth) {
+      grouped.set(start.getDate(), [...(grouped.get(start.getDate()) ?? []), slot]);
+    }
+    return grouped;
+  }, new Map());
 
   const selectNewSlot = async (slotId: string) => {
     if (!rebooking || updating || slotId === meeting?.slot.slot_id) return;
@@ -100,41 +116,57 @@ export function AppointmentPanel({
         <div className="appointment-calendar-head">
           <div>
             <p className="eyebrow">Advisor calendar</p>
-            <h3>{weekHeading}</h3>
+            <h3>{monthHeading}</h3>
           </div>
           <span>Europe/Stockholm</span>
         </div>
-        <div className="appointment-week">
-          {visibleSlots.map((slot) => {
-            const start = new Date(slot.start);
-            const booked = meeting?.slot.slot_id === slot.slot_id;
-            const slotBody = (
-              <>
-                <div className="appointment-date">
-                  <span>{start.toLocaleDateString("en-GB", { weekday: "short" })}</span>
-                  <strong>{start.getDate()}</strong>
-                  <small>{start.toLocaleDateString("en-GB", { month: "short" })}</small>
-                </div>
-                <div className="appointment-slot">
-                  <strong>{start.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</strong>
-                  <span>{slot.advisor}</span>
-                  <b>{booked ? "✓ Booked" : rebooking ? "Select time" : "Available"}</b>
-                </div>
-              </>
-            );
+        <div className="appointment-month-weekdays" aria-hidden>
+          {["Mon", "Tue", "Wed", "Thu", "Fri"].map((weekday) => (
+            <span key={weekday}>{weekday}</span>
+          ))}
+        </div>
+        <div className="appointment-month-grid">
+          {calendarDays.map((day, index) => {
+            const daySlots = day === null ? [] : slotsByDay.get(day) ?? [];
             return (
-              <article key={slot.slot_id} className={`appointment-day ${booked ? "booked" : ""}`}>
-                {rebooking && !booked ? (
-                  <button
-                    type="button"
-                    className="appointment-slot-button"
-                    onClick={() => void selectNewSlot(slot.slot_id)}
-                    disabled={updating}
-                  >
-                    {slotBody}
-                  </button>
-                ) : slotBody}
-              </article>
+              <div
+                key={`${day ?? "blank"}-${index}`}
+                className={`appointment-month-day ${day === null ? "outside" : ""} ${daySlots.length ? "has-slots" : ""}`}
+              >
+                {day !== null && <span className="appointment-day-number">{day}</span>}
+                {daySlots.length > 0 && (
+                  <>
+                    <div className="appointment-time-list">
+                      {daySlots.map((slot) => {
+                        const booked = meeting?.slot.slot_id === slot.slot_id;
+                        const time = new Date(slot.start).toLocaleTimeString("en-GB", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        });
+                        return rebooking && !booked ? (
+                          <button
+                            key={slot.slot_id}
+                            type="button"
+                            className="appointment-time-chip"
+                            onClick={() => void selectNewSlot(slot.slot_id)}
+                            disabled={updating}
+                          >
+                            {time}
+                          </button>
+                        ) : (
+                          <span
+                            key={slot.slot_id}
+                            className={`appointment-time-chip ${booked ? "booked" : ""}`}
+                          >
+                            {booked ? `✓ ${time}` : time}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <small className="appointment-availability-label">Available</small>
+                  </>
+                )}
+              </div>
             );
           })}
         </div>

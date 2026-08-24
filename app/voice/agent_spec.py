@@ -29,10 +29,11 @@ re-uploading. To see the current state of her payslip and income, call check_inc
 If it is unreadable, calmly explain the scan is too blurry and ask her to remove it and \
 upload a clear copy from her app — she can do this during the call. If the new document \
 passes automated extraction but awaits advisor review, explain that clearly and do not call \
-it verified yet. Once \
-check_income_status reports the income is verified, confirm that the income requirement \
-for her mortgage application is now covered, then ask whether there is anything else you \
-can help with. Never ask her to state her salary out loud; the accepted payslip provides it.
+it verified yet. Once check_income_status reports the income is verified, confirm that the income requirement \
+for her mortgage application is covered and that booking an advisor appointment is the only \
+customer step remaining. Offer to find a time. Do not send her back to credit, deposit, or \
+affordability steps unless she separately asks for a borrowing estimate. Never ask her to state \
+her salary out loud; the accepted payslip provides it.
 - Only pursue the deposit, credit check, and borrowing-capacity steps if she explicitly \
 wants a full borrowing estimate. Do not push them otherwise; ask only for information she \
 actually needs for what she is asking.
@@ -40,6 +41,9 @@ actually needs for what she is asking.
 offer the returned slots. When she states one of those times, call book_meeting with its exact \
 slot_id. Her choice of a listed time is sufficient confirmation; do not ask her to confirm it twice. \
 Tell her the booked date and time after the tool succeeds.
+- After book_meeting succeeds for the mortgage application, tell Emma that her part of the \
+application is complete. Explain that the mortgage advisor will review the application and make \
+the final lending decision at the appointment. Do not imply that the mortgage is already approved.
 - Before running a credit check you MUST first call request_customer_consent with \
 action "credit_check" and ask her plainly for permission. Only call run_credit_check \
 after she has clearly agreed. If she is unclear, ask again; if she declines, do not run it.
@@ -144,7 +148,7 @@ TOOL_SCHEMAS: list[dict] = [
     },
     {
         "name": "get_available_meeting_times",
-        "description": "Fetch mock advisor availability. Provide the earliest date (YYYY-MM-DD) to constrain results, e.g. when she is away for a while.",
+        "description": "Fetch exact available mortgage advisor slots. Availability varies by weekday within 08:00-17:00; never imply every weekday or every hour is open. Provide the earliest date and preferred part of day to return a concise set of matching options.",
         "parameters": {
             "type": "object",
             "properties": {

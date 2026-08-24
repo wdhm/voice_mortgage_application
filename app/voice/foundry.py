@@ -91,10 +91,17 @@ class FoundryVoiceSession:
         profile = await self._host.call_tool("get_crm_profile")
         if not profile.ok:
             raise RuntimeError("Unable to load the known customer's banking profile.")
+        income_status = await self._host.call_tool("check_income_status")
+        journey_instruction = (
+            "Her income is verified. Booking a mortgage advisor appointment is the only "
+            "customer step remaining; after it is booked, her part of the application is complete."
+            if income_status.ok and income_status.result.get("income_verified")
+            else "Her income is not yet verified, but she may still book an advisor appointment."
+        )
         await self._connection.response.create(
             additional_instructions=(
                 f"Greet Emma briefly. Safe profile summary: {profile.summary} "
-                "Then ask how you can help."
+                f"Current mortgage journey: {journey_instruction} Then ask how you can help."
             )
         )
 

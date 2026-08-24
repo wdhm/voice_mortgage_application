@@ -42,7 +42,11 @@ async def appointment_availability(earliest_date: str = "2026-09-21") -> dict:
     """Expose the same mock advisor slots that Voice Live can book."""
     outcome = await app_state.tools.dispatch(
         "get_available_meeting_times",
-        {"earliest_date": earliest_date, "preferred_time": "afternoon"},
+        {
+            "earliest_date": earliest_date,
+            "preferred_time": "afternoon",
+            "full_month": True,
+        },
     )
     if not outcome.ok:
         raise HTTPException(status_code=422, detail=outcome.summary)
