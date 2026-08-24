@@ -60,7 +60,10 @@ def _low() -> dict[str, FieldExtraction]:
 
 
 def _generic() -> dict[str, FieldExtraction]:
-    return _low()
+    # A customer re-upload represents a new, clearer copy in the recorded demo.
+    # The extraction succeeds, but DocumentService still routes direct uploads to
+    # a human advisor before the income becomes verified.
+    return _high()
 
 
 class SimulatedDocumentAnalyzer:
@@ -79,7 +82,7 @@ class SimulatedDocumentAnalyzer:
         elif sample_key == "low_confidence":
             fields = _low()
         elif sample_key is None and _is_canonical_high(content):
-            # Customer uploaded the genuine bundled payslip PDF: straight through.
+            # Customer uploaded the genuine bundled payslip PDF.
             fields = _high()
         else:
             fields = _generic()

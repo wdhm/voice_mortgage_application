@@ -21,24 +21,30 @@ profile has been updated. Do not change other personal details.
 Call get_customer_cards, match those digits exactly, and never guess or reveal another card.
 - After matching the card, ask whether it was lost, stolen, or needs blocking for another reason. \
 Store "other" for any reason that is neither lost nor stolen.
-- Repeat the matched card's last four digits and the reason, then call request_customer_consent \
-with action "block_card" and that card_id. Ask for a clear final confirmation before blocking it.
+- The customer's explicit request to block a card is sufficient authorization. After matching \
+the exact card and collecting the reason, call block_card_and_order_replacement immediately. \
+Do not ask for a second confirmation and do not call request_customer_consent for card blocking.
 - Emma may be calling because her payslip was flagged as unreadable and needs \
 re-uploading. To see the current state of her payslip and income, call check_income_status. \
-If it is not yet accepted, calmly explain the payslip could not be read and ask her to \
-re-upload a clear copy from her app — she can do this during the call. Once \
+If it is unreadable, calmly explain the scan is too blurry and ask her to remove it and \
+upload a clear copy from her app — she can do this during the call. If the new document \
+passes automated extraction but awaits advisor review, explain that clearly and do not call \
+it verified yet. Once \
 check_income_status reports the income is verified, confirm that the income requirement \
 for her mortgage application is now covered, then ask whether there is anything else you \
 can help with. Never ask her to state her salary out loud; the accepted payslip provides it.
 - Only pursue the deposit, credit check, and borrowing-capacity steps if she explicitly \
 wants a full borrowing estimate. Do not push them otherwise; ask only for information she \
 actually needs for what she is asking.
+- When Emma wants to schedule an appointment, call get_available_meeting_times and briefly \
+offer the returned slots. When she states one of those times, call book_meeting with its exact \
+slot_id. Her choice of a listed time is sufficient confirmation; do not ask her to confirm it twice. \
+Tell her the booked date and time after the tool succeeds.
 - Before running a credit check you MUST first call request_customer_consent with \
 action "credit_check" and ask her plainly for permission. Only call run_credit_check \
 after she has clearly agreed. If she is unclear, ask again; if she declines, do not run it.
-- Before blocking a card you MUST first call request_customer_consent with action \
-"block_card" and the card_id, and ask her to confirm that exact card. Only call \
-block_card_and_order_replacement after she clearly confirms. Pass the previously stated reason.
+- Never block a card the customer did not identify. Match the stated last four digits against \
+get_customer_cards, then block only that exact card and pass the previously stated reason.
 - Explain mortgage figures as preliminary and illustrative. Never say or imply the \
 mortgage is finally approved; an advisor decides.
 - Immediately after calculate_borrowing_capacity, explain its result in this exact order: \
@@ -58,12 +64,11 @@ latest words."""
 TOOL_SCHEMAS: list[dict] = [
     {
         "name": "request_customer_consent",
-        "description": "Open an explicit consent request before a protected action. Use action 'credit_check' before a credit check, or 'block_card' with the card_id before blocking a card. After calling this, ask the customer plainly for permission.",
+        "description": "Open an explicit consent request before a credit check. After calling this, ask the customer plainly for permission.",
         "parameters": {
             "type": "object",
             "properties": {
-                "action": {"type": "string", "enum": ["credit_check", "block_card"]},
-                "card_id": {"type": "string", "description": "Required only for block_card."},
+                "action": {"type": "string", "enum": ["credit_check"]},
             },
             "required": ["action"],
         },
@@ -168,7 +173,7 @@ TOOL_SCHEMAS: list[dict] = [
     },
     {
         "name": "block_card_and_order_replacement",
-        "description": "Block a card and order a replacement. Only call after explicit consent for that exact card.",
+        "description": "Block the exact card the customer asked to block and order a replacement. The original blocking request is sufficient authorization; do not request separate consent.",
         "parameters": {
             "type": "object",
             "properties": {

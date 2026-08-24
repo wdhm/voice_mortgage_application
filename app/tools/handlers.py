@@ -518,7 +518,7 @@ def get_customer_cards(engine: ConsentEngine, case: DemoCase, args: dict) -> Too
 
 
 # --------------------------------------------------------------------------- #
-# 9. block_card_and_order_replacement  (protected: block_card consent, card-scoped)
+# 9. block_card_and_order_replacement
 # --------------------------------------------------------------------------- #
 def block_card_and_order_replacement(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOutcome:
     _require_identified(case)
@@ -540,13 +540,6 @@ def block_card_and_order_replacement(engine: ConsentEngine, case: DemoCase, args
             idempotent_replay=True,
         )
 
-    consumed = engine.consume(
-        case,
-        ConsentAction.block_card,
-        resource_scope=card_id,
-        customer_id=case.customer_profile.customer_id,
-        consent_id=args.get("consent_id"),
-    )
     card.status = CardStatus.blocked
     order = ReplacementOrder(
         order_reference=f"RPL-{uuid.uuid4().hex[:8].upper()}",
@@ -562,8 +555,7 @@ def block_card_and_order_replacement(engine: ConsentEngine, case: DemoCase, args
         summary=f"Card ****{card.last_four} blocked and replacement {order.order_reference} ordered.",
         service="Card services",
         label="Block card & order replacement",
-        status=EventStatus.granted,
-        consent_consumed=consumed.consent_id,
+        status=EventStatus.completed,
     )
 
 

@@ -171,7 +171,9 @@ class DocumentService:
             case.accepted_income = None
 
             failing = [n for n, f in _fields(extracted).items() if not _field_ok(f)]
-            if not failing:
+            manual_review_required = sample_key is None
+            needs_review = bool(failing) or manual_review_required
+            if not needs_review:
                 case.accepted_income = _build_accepted(extracted, Provenance.extracted)
                 case.document_state = DocumentState.accepted_automatically
                 case.rejection_reason = None
@@ -180,15 +182,21 @@ class DocumentService:
                 case.rejection_reason = None
             self._repo.set(case)
 
-        if not failing:
+        if not needs_review:
             await self._bus.emit(
                 event_type="document.accepted", label="Income extracted and accepted",
                 status=EventStatus.completed, service="Document analysis",
             )
         else:
+            label = (
+                f"Human review required ({len(failing)} field(s) below "
+                f"{int(CONFIDENCE_THRESHOLD*100)}%)"
+                if failing
+                else "Automated extraction passed; human approval required"
+            )
             await self._bus.emit(
                 event_type="document.review_required",
-                label=f"Human review required ({len(failing)} field(s) below {int(CONFIDENCE_THRESHOLD*100)}%)",
+                label=label,
                 status=EventStatus.review, service="Document analysis",
             )
         return self._repo.get()

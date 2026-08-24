@@ -45,8 +45,7 @@ class VoiceHarness:
             "I have one million seven hundred and fifty thousand kronor.",
             "I'm away for three weeks. Do you have anything after that?",
             "Monday the 21st of September at 15:00 works.",
-            "One more thing — my card was stolen.",
-            "Yes, block it and order a replacement.",
+            "One more thing — my card was stolen. Please block it.",
         ]
         for b in beats:
             await self.orch.user_text(b)
@@ -108,7 +107,7 @@ async def test_credit_gate_blocks_without_clear_consent():
     assert h.repo.get().credit_result is None  # gate held
 
 
-async def test_card_block_gate_blocks_without_consent():
+async def test_card_block_request_needs_no_second_confirmation():
     h = VoiceHarness()
     from app.domain.fixtures import apply_accepted_income_emma
 
@@ -124,13 +123,11 @@ async def test_card_block_gate_blocks_without_consent():
         "1,750,000 kronor.",
         "Anything after three weeks away?",
         "The 21st of September at 15:00.",
-        "My card was stolen.",
+        "My card was stolen; please block it.",
     ]:
         await h.orch.user_text(b)
-    # Decline the block.
-    await h.orch.user_text("No, don't block it.")
-    assert h.repo.get().cards[0].status is CardStatus.active  # gate held
-    assert h.repo.get().replacement_order is None
+    assert h.repo.get().cards[0].status is CardStatus.blocked
+    assert h.repo.get().replacement_order is not None
 
 
 async def test_advisor_summary_contract_for_screen3(h):
@@ -167,6 +164,17 @@ async def test_call_starts_with_known_customer_profile():
         message["text"] for message in h.drain() if message.get("type") == "agent_transcript"
     )
     assert "Emma" in transcript
+
+
+async def test_voice_explains_unreadable_payslip_and_reupload():
+    h = VoiceHarness()
+    await h.orch.start()
+    await h.orch.user_text("Why was my payslip not approved?")
+    transcript = " ".join(
+        message["text"] for message in h.drain() if message.get("type") == "agent_transcript"
+    ).lower()
+    assert "too blurry" in transcript
+    assert "upload a clearer copy" in transcript
 
 
 async def test_simulated_call_updates_phone_after_readback_confirmation():

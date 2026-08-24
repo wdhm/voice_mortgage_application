@@ -65,7 +65,7 @@ async def test_uploaded_document_returns_demo_extraction_for_review(d):
     assert case.accepted_income is None
 
 
-async def test_uploading_bundled_payslip_pdf_auto_accepts(d):
+async def test_uploading_bundled_payslip_pdf_requires_advisor_approval(d):
     # Uploading the genuine committed payslip PDF (no sample_key) is routed by an
     # exact content hash to the high-confidence straight-through path.
     from app.documents.samples import sample_pdf_path
@@ -78,11 +78,16 @@ async def test_uploading_bundled_payslip_pdf_auto_accepts(d):
         filename=pdf.name,
         sample_key=None,
     )
-    assert case.document_state is DocumentState.accepted_automatically
+    assert case.document_state is DocumentState.review_required
     assert case.uploaded_document.sample_key is None
-    assert case.accepted_income is not None
-    assert case.accepted_income.gross_salary_monthly == 96_000
-    assert case.accepted_income.net_salary_monthly == 62_400
+    assert case.accepted_income is None
+    assert case.extracted_income.gross_salary_monthly.normalized_value == 96_000
+    assert case.extracted_income.net_salary_monthly.normalized_value == 62_400
+
+    approved = await d.docs.review_approve()
+    assert approved.document_state is DocumentState.accepted_after_review
+    assert approved.accepted_income.gross_salary_monthly == 96_000
+    assert approved.accepted_income.net_salary_monthly == 62_400
 
 
 async def test_remove_clears_document_and_extracted_income(d):

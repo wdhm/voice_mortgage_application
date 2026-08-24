@@ -37,6 +37,49 @@ async def get_events() -> list[dict]:
     return [e.model_dump(mode="json") for e in app_state.bus.history()]
 
 
+@router.get("/appointments/availability")
+async def appointment_availability(earliest_date: str = "2026-09-21") -> dict:
+    """Expose the same mock advisor slots that Voice Live can book."""
+    outcome = await app_state.tools.dispatch(
+        "get_available_meeting_times",
+        {"earliest_date": earliest_date, "preferred_time": "afternoon"},
+    )
+    if not outcome.ok:
+        raise HTTPException(status_code=422, detail=outcome.summary)
+    return outcome.result
+
+
+class AppointmentSelection(BaseModel):
+    slot_id: str
+
+
+@router.post("/appointments/rebook")
+async def rebook_appointment(selection: AppointmentSelection) -> dict:
+    """Replace the current booking with another previously offered slot."""
+    case = app_state.repo.get()
+    previous_booking = case.booked_meeting
+    case.booked_meeting = None
+    outcome = await app_state.tools.dispatch(
+        "book_meeting",
+        {"slot_id": selection.slot_id, "purpose": "Mortgage advisory meeting"},
+    )
+    if not outcome.ok:
+        case.booked_meeting = previous_booking
+        raise HTTPException(status_code=422, detail=outcome.summary)
+    return outcome.result
+
+
+@router.delete("/appointments/booking")
+async def cancel_appointment() -> dict:
+    """Cancel the active demo appointment while keeping availability visible."""
+    case = app_state.repo.get()
+    if case.booked_meeting is None:
+        return {"cancelled": False}
+    booking_reference = case.booked_meeting.booking_reference
+    case.booked_meeting = None
+    return {"cancelled": True, "booking_reference": booking_reference}
+
+
 class CreditReportApproval(BaseModel):
     approved: bool
 

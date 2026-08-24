@@ -101,7 +101,7 @@ export interface DocumentProjection {
 
 export interface BankPayslipRecord {
   id: string;
-  status: "accepted" | "rejected";
+  status: "accepted" | "rejected" | "review_required";
   customer: {
     name: string;
     initials: string;
@@ -111,6 +111,7 @@ export interface BankPayslipRecord {
   document: {
     filename: string;
     content_type: string;
+    uploaded_at?: string;
   };
   analyzer: {
     provider: string;
@@ -346,13 +347,46 @@ export interface DemoCaseView {
     source: string;
   } | null;
   capacity_result: { metrics: CapacityMetrics } | null;
+  offered_meeting_slots: AppointmentSlot[];
   booked_meeting:
-    | { slot: { slot_id: string; start: string; advisor: string }; booking_reference: string; purpose: string }
+    | { slot: AppointmentSlot; booking_reference: string; purpose: string }
     | null;
   cards: CaseCard[];
   replacement_order: { order_reference: string; delivery_estimate: string; reason: string } | null;
   advisor_summary: AdvisorSummary | null;
   outcome: string;
+}
+
+export interface AppointmentSlot {
+  slot_id: string;
+  start: string;
+  end: string;
+  timezone: string;
+  advisor: string;
+}
+
+export async function getAppointmentAvailability(): Promise<{ slots: AppointmentSlot[] }> {
+  const r = await fetch("/api/appointments/availability?earliest_date=2026-09-21");
+  if (!r.ok) throw new Error("Unable to load advisor availability");
+  return r.json();
+}
+
+export async function rebookAppointment(
+  slotId: string,
+): Promise<NonNullable<DemoCaseView["booked_meeting"]>> {
+  const r = await fetch("/api/appointments/rebook", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ slot_id: slotId }),
+  });
+  if (!r.ok) throw new Error("Unable to rebook the appointment");
+  return r.json();
+}
+
+export async function cancelAppointment(): Promise<{ cancelled: boolean }> {
+  const r = await fetch("/api/appointments/booking", { method: "DELETE" });
+  if (!r.ok) throw new Error("Unable to cancel the appointment");
+  return r.json();
 }
 
 export async function getCase(): Promise<DemoCaseView> {

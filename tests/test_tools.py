@@ -145,13 +145,7 @@ async def test_full_mortgage_and_card_flow(stack):
     assert cards.ok and cards.result["cards"][0]["last_four"] == "4471"
     assert cards.result["cards"][1]["last_four"] == "1842"
 
-    # Block without consent is refused.
-    refused = await stack.tools.dispatch(
-        "block_card_and_order_replacement", {"card_id": MASTERCARD_ID, "reason": "stolen"}
-    )
-    assert not refused.ok
-
-    await _grant(stack, ConsentAction.block_card, scope=MASTERCARD_ID)
+    # The customer's original request is sufficient; no second consent record is required.
     blocked = await stack.tools.dispatch(
         "block_card_and_order_replacement", {"card_id": MASTERCARD_ID, "reason": "stolen"}
     )
@@ -167,14 +161,12 @@ async def test_full_mortgage_and_card_flow(stack):
     assert stack.repo.get().cards[0].status is CardStatus.blocked
 
 
-async def test_block_consent_wrong_card_scope_refused(stack):
+async def test_block_unknown_card_is_refused(stack):
     await _identify(stack)
-    # Consent granted for a different card must not authorize 4471.
-    await _grant(stack, ConsentAction.block_card, scope="card-OTHER")
     out = await stack.tools.dispatch(
-        "block_card_and_order_replacement", {"card_id": MASTERCARD_ID, "reason": "stolen"}
+        "block_card_and_order_replacement", {"card_id": "card-OTHER", "reason": "stolen"}
     )
-    assert not out.ok and out.result["error"] == "consent_required"
+    assert not out.ok
 
 
 async def test_reset_discards_consent(stack):

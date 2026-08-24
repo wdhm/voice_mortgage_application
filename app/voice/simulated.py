@@ -34,7 +34,6 @@ class Phase(Enum):
     AWAIT_MEETING = auto()
     AWAIT_RESCHEDULE = auto()
     AWAIT_CARD = auto()
-    AWAIT_BLOCK_CONSENT = auto()
     DONE = auto()
 
 
@@ -46,6 +45,14 @@ def _mentions_reschedule(text: str) -> bool:
 def _mentions_phone_update(text: str) -> bool:
     lowered = text.lower()
     return "phone" in lowered or "mobile" in lowered or "telephone" in lowered
+
+
+def _mentions_payslip_help(text: str) -> bool:
+    lowered = text.lower()
+    return any(
+        phrase in lowered
+        for phrase in ("payslip", "pay slip", "salary slip", "income document", "income verification")
+    )
 
 
 def _extract_phone_number(text: str) -> str | None:
@@ -89,6 +96,9 @@ class SimulatedVoiceSession:
     async def on_user_text(self, text: str) -> None:
         # Echo the customer's turn AND resolve any pending consent server-side first.
         await self._host.user_said(text)
+        if _mentions_payslip_help(text):
+            await self._handle_payslip_help()
+            return
         if _mentions_phone_update(text) and self._phase not in {
             Phase.AWAIT_PHONE_NUMBER,
             Phase.AWAIT_PHONE_CONFIRMATION,
@@ -105,12 +115,36 @@ class SimulatedVoiceSession:
             Phase.AWAIT_MEETING: self._on_meeting,
             Phase.AWAIT_RESCHEDULE: self._on_reschedule,
             Phase.AWAIT_CARD: self._on_card,
-            Phase.AWAIT_BLOCK_CONSENT: self._on_block_consent,
             Phase.DONE: self._on_done,
         }[self._phase]
         await handler(text)
 
     # ---- phase handlers -------------------------------------------------- #
+    async def _handle_payslip_help(self) -> None:
+        status = await self._host.call_tool("check_income_status")
+        state = status.result.get("document_state")
+        if status.result.get("income_verified"):
+            await self._host.say(
+                "Your payslip has now been approved and your income is verified. "
+                "Is there anything else I can help you with?"
+            )
+        elif state == "review_required":
+            await self._host.say(
+                "The new payslip was read successfully and passed the automated checks. "
+                "It is now waiting for a Bank Alfa advisor to approve it."
+            )
+        elif state == "empty":
+            await self._host.say(
+                "Please upload a clear copy of your latest payslip in Income verification. "
+                "You can do that while we are on the call."
+            )
+        else:
+            await self._host.say(
+                "I'm sorry, the scan is too blurry for us to read the income details. "
+                "Please remove it and upload a clearer copy in Income verification. "
+                "You can do that while we are on the call."
+            )
+
     async def _begin_phone_update(self, text: str) -> None:
         candidate = _extract_phone_number(text)
         if candidate:
@@ -242,26 +276,16 @@ class SimulatedVoiceSession:
 
     async def _on_card(self, text: str) -> None:
         await self._host.call_tool("get_customer_cards")
-        await self._host.say(
-            "I'm sorry to hear that. I can see your Bank Alfa Mastercard ending 4471. "
-            "Should I block Mastercard ending 4471 and order a replacement now?"
-        )
-        await self._host.request_consent("block_card", card_id=MASTERCARD_ID)
-        self._phase = Phase.AWAIT_BLOCK_CONSENT
-
-    async def _on_block_consent(self, text: str) -> None:
         out = await self._host.call_tool(
             "block_card_and_order_replacement", {"card_id": MASTERCARD_ID, "reason": "stolen"}
         )
         if not out.ok:
             await self._host.say(
-                "I won't block it without your confirmation. To confirm: shall I block Mastercard ending 4471 "
-                "and order a replacement?"
+                "I couldn't block Mastercard ending 4471. Please try again or contact card support."
             )
-            await self._host.request_consent("block_card", card_id=MASTERCARD_ID)
             return
         await self._host.say(
-            "Done. Your Mastercard ending 4471 is blocked and a replacement is on its way. "
+            "I found your Bank Alfa Mastercard ending 4471. It is now blocked and a replacement is on its way. "
             "To recap: your credit check is complete, your preliminary mortgage numbers look supportable "
             "pending an advisor's final decision, and you're booked for Monday 21 September at 15:00. "
             "Take care, Emma — goodbye."

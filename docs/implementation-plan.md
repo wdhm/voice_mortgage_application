@@ -154,14 +154,14 @@ Exit criterion: deployed demo completes both parts from a browser over HTTPS and
 - Monday, 21 September 2026 at 15:00 can be selected and booked.
 - Repeating the booking call does not create a duplicate meeting.
 
-### Card intent and consent
+### Card intent and authorization
 
 - The same voice session can move from mortgage to stolen card without reset.
 - Only safe card descriptors are returned.
-- The agent identifies Mastercard 4471 and asks for explicit final confirmation.
-- Consent for the credit check cannot authorize the card block.
-- Consent for another card cannot authorize blocking 4471.
-- The card tool blocks 4471 and creates one replacement order only after valid consent.
+- The agent matches Mastercard 4471 from the customer's stated last four digits.
+- The customer's explicit request to block that card is sufficient authorization; no second confirmation is requested.
+- A request for another or unknown card cannot authorize blocking 4471.
+- The card tool blocks 4471 and creates one replacement order idempotently.
 - The closing response accurately summarizes both completed errands.
 
 ### Barge-in

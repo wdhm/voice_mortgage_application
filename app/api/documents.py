@@ -6,6 +6,7 @@ provider mode (so the demo is explicit about simulated vs real analysis).
 """
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import UTC, datetime
 from html import escape
@@ -49,6 +50,8 @@ def _bank_payslips_with_live_emma() -> dict:
     )
     if case.uploaded_document:
         emma["document"]["filename"] = case.uploaded_document.filename
+        emma["document"]["content_type"] = case.uploaded_document.content_type
+        emma["document"]["uploaded_at"] = case.uploaded_document.uploaded_at.isoformat()
 
     if accepted:
         emma["status"] = "accepted"
@@ -60,6 +63,16 @@ def _bank_payslips_with_live_emma() -> dict:
             "pay_date": accepted.pay_date.isoformat(),
         }
         emma["confidence"] = {name: 1.0 for name in REQUIRED_FIELDS}
+    elif case.document_state is DocumentState.review_required and case.extracted_income:
+        emma["status"] = "review_required"
+        emma["fields"] = {}
+        emma["confidence"] = {}
+        for name in REQUIRED_FIELDS:
+            field = getattr(case.extracted_income, name)
+            emma["fields"][name] = (
+                field.normalized_value if field.normalized_value is not None else field.value
+            )
+            emma["confidence"][name] = field.confidence
     else:
         emma["status"] = "rejected"
         emma["fields"] = {name: None for name in REQUIRED_FIELDS}
@@ -280,6 +293,9 @@ async def upload(file: UploadFile = File(...)) -> dict:  # noqa: B008 (FastAPI d
         validate_upload(content, file.content_type or "")
     except UploadValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if app_state.documents.provider == "simulated":
+        # Keep the OCR progress state visible long enough for the recorded demo.
+        await asyncio.sleep(1.4)
     case = await app_state.documents.analyze(
         content=content, content_type=file.content_type or "", filename=file.filename or "upload", sample_key=None
     )

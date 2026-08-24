@@ -125,7 +125,7 @@ At one safe point, interrupt the agent while it is speaking, for example while i
 | Is DigitalD real? | No. It is deliberately fictional and simulates an identity handoff. |
 | Is this making a lending decision? | No. It produces an illustrative preliminary calculation and advisor summary. The advisor owns the final decision. |
 | Are the integrations real? | The AI services are real. CRM, credit, policy, calendar, and cards are deterministic mocks. |
-| Can the model block a card without permission? | No. The tool dispatcher rejects the action unless explicit confirmation is recorded for the selected card and current session. |
+| Can the model block the wrong card? | No. It matches the customer's stated last four digits against safe card descriptors. The customer's explicit request to block that card is sufficient; it does not ask twice. |
 | Can low-confidence OCR silently enter the case? | No. Any required field below 0.85 routes the document to editable human review. |
 | Why show tool activity but not model reasoning? | Tool inputs, statuses, and business outputs are auditable. Private chain-of-thought is neither required nor appropriate to display. |
 
@@ -135,6 +135,6 @@ At one safe point, interrupt the agent while it is speaking, for example while i
 - Emma is never asked to repeat income already accepted from Part 1.
 - The agent adapts to the three-week scheduling objection.
 - Mortgage and stolen-card intents complete in one call.
-- Credit and card tools cannot run before their respective consent gates.
+- The credit tool requires explicit consent, while a card-block request executes without a duplicate confirmation.
 - At least one human handoff is visible even if the happy path is used.
 - Every completed tool call appears in the under-the-hood panel.

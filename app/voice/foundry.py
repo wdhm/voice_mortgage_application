@@ -25,8 +25,9 @@ from azure.ai.voicelive.models import (
     ToolChoiceLiteral,
     UserMessageItem,
 )
-from azure.identity.aio import DefaultAzureCredential
+from azure.core.credentials_async import AsyncTokenCredential
 
+from ..azure_auth import build_async_credential
 from ..config import settings
 from .agent_spec import SYSTEM_PROMPT, TOOL_SCHEMAS
 from .port import ConversationHost
@@ -39,7 +40,7 @@ class FoundryVoiceSession:
 
     def __init__(self, host: ConversationHost) -> None:
         self._host = host
-        self._credential: DefaultAzureCredential | None = None
+        self._credential: AsyncTokenCredential | None = None
         self._connection_context: AbstractAsyncContextManager | None = None
         self._connection: Any = None
         self._receive_task: asyncio.Task | None = None
@@ -49,7 +50,7 @@ class FoundryVoiceSession:
         self._pending_calls: list[tuple[str, str, str, str]] = []
 
     async def start(self) -> None:
-        self._credential = DefaultAzureCredential()
+        self._credential = build_async_credential()
         self._connection_context = connect(
             endpoint=settings.foundry_endpoint,
             credential=self._credential,
@@ -199,7 +200,7 @@ class FoundryVoiceSession:
                     )
                     payload = {"ok": True, "summary": "Consent request opened."}
                 else:
-                    if name in {"run_credit_check", "block_card_and_order_replacement"}:
+                    if name == "run_credit_check":
                         await asyncio.wait_for(
                             self._user_transcript_ready.wait(), timeout=8
                         )

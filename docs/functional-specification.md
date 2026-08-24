@@ -83,7 +83,8 @@ Only the first two make income available to Part 2.
 - Explain that calculations are preliminary and illustrative.
 - Keep the mortgage and stolen-card intents in the same session.
 - Never reveal full card numbers or unnecessary personal data.
-- Do not execute credit or card-block tools before valid consent.
+- Do not execute the credit tool before valid explicit consent.
+- Treat an explicit request to block a card as authorization for that card; do not ask for a second confirmation.
 - Do not state or imply that the mortgage is finally approved.
 
 ## Tool contracts
@@ -219,11 +220,11 @@ Guard: customer identified.
 
 Purpose: atomically block Mastercard 4471 and create a mock replacement order.
 
-Inputs: customer ID, card ID, reason `stolen`, consent ID.
+Inputs: customer ID, card ID, and reason such as `stolen`.
 
 Output includes blocked status, block timestamp, replacement order reference, and safe delivery estimate.
 
-Guard: unconsumed explicit consent for the exact selected card, action, customer, and current session. Mark consent consumed after execution. Repeated execution returns the existing block and replacement order.
+Guard: the customer must be identified and the card ID must match one of that customer's cards. The original blocking request is sufficient authorization. Repeated execution returns the existing block and replacement order.
 
 ## Consent model
 

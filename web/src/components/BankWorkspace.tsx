@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getBankPayslipExtractions,
   getCase,
+  reviewApprove,
   type BankPayslipRecord,
   type DemoCaseView,
   type DocumentState,
@@ -35,8 +36,9 @@ export function BankWorkspace({ refreshKey }: { refreshKey: number }) {
   const [records, setRecords] = useState<BankPayslipRecord[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string>("emma");
+  const [approving, setApproving] = useState(false);
 
-  useEffect(() => {
+  const loadWorkspace = useCallback(() => {
     Promise.all([getCase(), getBankPayslipExtractions()])
       .then(([nextCase, output]) => {
         setCaseView(nextCase);
@@ -44,13 +46,31 @@ export function BankWorkspace({ refreshKey }: { refreshKey: number }) {
         setLoadError(null);
       })
       .catch(() => setLoadError("Payslip extraction data could not be loaded."));
+  }, []);
+
+  useEffect(() => {
+    loadWorkspace();
   }, [refreshKey]);
 
   const emmaAccepted = caseView ? ACCEPTED_STATES.includes(caseView.document_state) : false;
+  const emmaReviewRequired = caseView?.document_state === "review_required";
   const queue = useMemo(() => records, [records]);
 
-  const flaggedCount = emmaAccepted ? 0 : 1;
+  const flaggedCount = emmaAccepted || emmaReviewRequired ? 0 : 1;
   const selectedApplicant = queue.find((record) => record.id === selected) ?? queue.find((record) => record.id === "emma");
+
+  const approveEmma = async () => {
+    setApproving(true);
+    setLoadError(null);
+    try {
+      await reviewApprove();
+      loadWorkspace();
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "The payslip could not be approved.");
+    } finally {
+      setApproving(false);
+    }
+  };
 
   return (
     <main className="bank-shell">
@@ -72,15 +92,22 @@ export function BankWorkspace({ refreshKey }: { refreshKey: number }) {
             {flaggedCount} payslip needs attention
           </p>
         )}
+        {emmaReviewRequired && (
+          <p className="queue-review-summary" role="status">
+            1 payslip is awaiting manual approval
+          </p>
+        )}
 
         <ul className="payslip-queue" aria-label="Payslip review queue">
           {queue.map((record) => {
             const accepted = record.status === "accepted";
+            const reviewRequired = record.status === "review_required";
+            const tone = accepted ? "ok" : reviewRequired ? "review" : "flagged";
             return (
               <li key={record.id}>
                 <button
                   type="button"
-                  className={`queue-row ${record.id === selected ? "active" : ""} ${accepted ? "ok" : "flagged"}`}
+                  className={`queue-row ${record.id === selected ? "active" : ""} ${tone}`}
                   aria-pressed={record.id === selected}
                   onClick={() => setSelected(record.id)}
                 >
@@ -89,9 +116,9 @@ export function BankWorkspace({ refreshKey }: { refreshKey: number }) {
                     <strong>{record.customer.name}</strong>
                     <small>{record.fields.employer_name ?? "Employer unavailable"}</small>
                   </span>
-                  <span className={`payslip-chip ${accepted ? "ok" : "flagged"}`}>
-                    <span aria-hidden>{accepted ? "●" : "▲"}</span>
-                    {accepted ? "Accepted" : "Rejected"}
+                  <span className={`payslip-chip ${tone}`}>
+                    <span aria-hidden>{accepted ? "●" : reviewRequired ? "●" : "▲"}</span>
+                    {accepted ? "Accepted" : reviewRequired ? "Review" : "Rejected"}
                   </span>
                 </button>
               </li>
@@ -109,7 +136,13 @@ export function BankWorkspace({ refreshKey }: { refreshKey: number }) {
         {loadError ? (
           <p className="queue-load-error" role="alert">{loadError}</p>
         ) : selectedApplicant?.id === "emma" ? (
-          <EmmaCaseDetail caseView={caseView} accepted={emmaAccepted} record={selectedApplicant} />
+          <EmmaCaseDetail
+            caseView={caseView}
+            accepted={emmaAccepted}
+            record={selectedApplicant}
+            approving={approving}
+            onApprove={() => void approveEmma()}
+          />
         ) : selectedApplicant ? (
           <AcceptedCaseDetail record={selectedApplicant} />
         ) : (
@@ -124,12 +157,18 @@ function EmmaCaseDetail({
   caseView,
   accepted,
   record,
+  approving,
+  onApprove,
 }: {
   caseView: DemoCaseView | null;
   accepted: boolean;
   record: BankPayslipRecord;
+  approving: boolean;
+  onApprove: () => void;
 }) {
   const reason = caseView?.rejection_reason;
+  const reviewRequired = record.status === "review_required";
+  const tone = accepted ? "ok" : reviewRequired ? "review" : "flagged";
   return (
     <>
       <header className="bank-case-header">
@@ -141,9 +180,9 @@ function EmmaCaseDetail({
             {caseView?.customer_profile.city ?? "Täby"}
           </p>
         </div>
-        <span className={`payslip-chip large ${accepted ? "ok" : "flagged"}`}>
-          <span aria-hidden>{accepted ? "●" : "▲"}</span>
-          {accepted ? "Payslip accepted" : "Payslip rejected"}
+        <span className={`payslip-chip large ${tone}`}>
+          <span aria-hidden>{accepted || reviewRequired ? "●" : "▲"}</span>
+          {accepted ? "Payslip accepted" : reviewRequired ? "Awaiting approval" : "Payslip rejected"}
         </span>
       </header>
 
@@ -154,6 +193,16 @@ function EmmaCaseDetail({
             <p>A clear payslip was received and read automatically. The mortgage application has the income evidence it needs.</p>
           </div>
         </section>
+      ) : reviewRequired ? (
+        <section className="payslip-banner review" role="status">
+          <div>
+            <h2>Automated review passed — manual approval required</h2>
+            <p>All mandatory income fields were extracted. Confirm the values before accepting the payslip.</p>
+          </div>
+          <button type="button" className="icon-btn primary" onClick={onApprove} disabled={approving}>
+            {approving ? "Approving…" : "Approve payslip"}
+          </button>
+        </section>
       ) : (
         <section className="payslip-banner flagged" role="status">
           <div>
@@ -163,8 +212,8 @@ function EmmaCaseDetail({
         </section>
       )}
 
-      <PayslipEvidence record={record} flagged={!accepted} />
-      {!accepted && (
+      <PayslipEvidence record={record} tone={tone} />
+      {!accepted && !reviewRequired && (
         <p className="evidence-source payslip-follow-up">
           The customer can re-upload a clear payslip from their own view; this case flips to green
           automatically once a readable copy is accepted.
@@ -204,11 +253,17 @@ function AcceptedCaseDetail({ record }: { record: BankPayslipRecord }) {
 
 function PayslipEvidence({
   record,
-  flagged = false,
+  tone = "ok",
 }: {
   record: BankPayslipRecord;
-  flagged?: boolean;
+  tone?: "ok" | "flagged" | "review";
 }) {
+  const flagged = tone === "flagged";
+  const reviewRequired = tone === "review";
+  const previewSrc =
+    record.id === "emma" && !flagged && record.document.uploaded_at
+      ? `/api/documents/uploaded/preview?ts=${encodeURIComponent(record.document.uploaded_at)}`
+      : `/api/documents/bank-extractions/${record.id}/preview`;
   return (
     <section className="payslip-preview-card">
       <div className="payslip-review-grid">
@@ -220,22 +275,24 @@ function PayslipEvidence({
             </div>
             <span className="evidence-source">Content Understanding · simulated</span>
           </div>
-          <div className={`payslip-frame ${flagged ? "flagged" : ""}`}>
+          <div className={`payslip-frame ${tone}`}>
             <iframe
               key={`${record.id}-${record.status}`}
               title={`Submitted payslip for ${record.customer.name}`}
-              src={`/api/documents/bank-extractions/${record.id}/preview`}
+              src={previewSrc}
             />
           </div>
         </div>
-        <aside className={`extracted-data-panel ${flagged ? "flagged" : ""}`}>
+        <aside className={`extracted-data-panel ${tone}`}>
           <div className="extracted-data-head">
             <div>
               <p className="pane-title">Mandatory extracted data</p>
-              <h3>{flagged ? "No readable values" : "Income fields collected"}</h3>
+              <h3>
+                {flagged ? "No readable values" : reviewRequired ? "Ready for manual approval" : "Income fields collected"}
+              </h3>
             </div>
-            <span className={`payslip-chip ${flagged ? "flagged" : "ok"}`}>
-              {flagged ? "Rejected" : "Complete"}
+            <span className={`payslip-chip ${tone}`}>
+              {flagged ? "Rejected" : reviewRequired ? "Review" : "Complete"}
             </span>
           </div>
           <dl className="extracted-field-list">
