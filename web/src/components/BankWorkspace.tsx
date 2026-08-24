@@ -1,19 +1,22 @@
 import { useEffect, useState } from "react";
-import { getCase, type DemoCaseView } from "../lib/api";
+import { getCase, type DemoCaseView, type TimelineEvent } from "../lib/api";
 import { DocumentPanel } from "./DocumentPanel";
 import { MortgageProgress } from "./MortgageChecklist";
 import { SummaryPanel } from "./SummaryPanel";
+import { DecisionTimeline } from "./DecisionTimeline";
 
 const kr = (value: number | undefined) =>
   value === undefined ? "—" : `${value.toLocaleString("sv-SE")} kr`;
 
 export function BankWorkspace({
+  events,
   refreshKey,
   incomeVerified,
   affordabilityComplete,
   bankReviewComplete,
   appointmentComplete,
 }: {
+  events: TimelineEvent[];
   refreshKey: number;
   incomeVerified: boolean;
   affordabilityComplete: boolean;
@@ -84,6 +87,8 @@ export function BankWorkspace({
           </div>
           <span className={`case-status ${bankReviewComplete ? "review" : ""}`}>{status}</span>
         </header>
+
+        <DecisionTimeline events={events} embedded />
 
         <MortgageProgress
           activeStep={activeStep}

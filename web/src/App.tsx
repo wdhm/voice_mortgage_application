@@ -195,6 +195,7 @@ export default function App() {
           </main>
         ) : (
           <BankWorkspace
+            events={events}
             refreshKey={events.length}
             incomeVerified={incomeVerified}
             affordabilityComplete={affordabilityComplete}

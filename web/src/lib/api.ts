@@ -280,6 +280,9 @@ export interface DemoCaseView {
     contact_details_updated_at: string | null;
     contact_details_updated_by: string | null;
     existing_products?: string[];
+    // Additive fields used by the decision timeline's Employment node.
+    employer_name?: string;
+    relationship_summary?: string;
   } & Record<string, unknown>;
   credit_result: {
     score: number;
