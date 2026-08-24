@@ -99,6 +99,40 @@ export interface DocumentProjection {
   review_record: { edited_fields: string[]; decision: string | null } | null;
 }
 
+export interface BankPayslipRecord {
+  id: string;
+  status: "accepted" | "rejected";
+  customer: {
+    name: string;
+    initials: string;
+    customer_number: string;
+    city: string;
+  };
+  document: {
+    filename: string;
+    content_type: string;
+  };
+  analyzer: {
+    provider: string;
+    method: string;
+  };
+  fields: Record<FieldName, string | number | null>;
+  confidence: Record<FieldName, number | null>;
+}
+
+export interface BankPayslipExtractions {
+  schema: string;
+  schema_version: string;
+  generated_at: string;
+  payslips: BankPayslipRecord[];
+}
+
+export async function getBankPayslipExtractions(): Promise<BankPayslipExtractions> {
+  const r = await fetch("/api/documents/bank-extractions");
+  if (!r.ok) throw new Error("Failed to load bank payslip extractions");
+  return r.json();
+}
+
 export interface SampleMeta {
   key: string;
   label: string;
@@ -275,6 +309,13 @@ export interface DemoCaseView {
     content_type: string;
     sample_key: string | null;
     uploaded_at: string;
+  } | null;
+  accepted_income: {
+    employer_name: string;
+    gross_salary_monthly: number;
+    net_salary_monthly: number;
+    employment_type: string;
+    pay_date: string;
   } | null;
   customer_profile: {
     customer_id: string;
