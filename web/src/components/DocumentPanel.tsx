@@ -128,6 +128,7 @@ function CustomerUpload({
   const submitted = uploaded !== null && !analyzing;
   const fields = doc?.fields ?? null;
   const approved = state === "accepted_automatically" || state === "accepted_after_review";
+  const rejected = state === "analysis_failed" || state === "rejected_by_reviewer";
 
   const pick = () => !busy && inputRef.current?.click();
 
@@ -171,6 +172,30 @@ function CustomerUpload({
         }}
       />
 
+      {rejected && (
+        <section className="payslip-rejected-card" role="alert">
+          <div className="payslip-rejected-head">
+            <span className="payslip-rejected-icon" aria-hidden>▲</span>
+            <div>
+              <strong>Your payslip couldn’t be read</strong>
+              <p>
+                {doc?.rejection_reason ??
+                  "The scan was too blurred to read. Please upload a clear copy of your payslip."}
+              </p>
+            </div>
+          </div>
+          {uploaded && <p className="payslip-rejected-file">Rejected file: {uploaded.filename}</p>}
+          <div className="payslip-rejected-actions">
+            <button type="button" className="icon-btn primary" onClick={pick} disabled={busy}>
+              Re-upload payslip
+            </button>
+            <button type="button" className="icon-btn remove-upload" onClick={onRemove} disabled={busy}>
+              Remove
+            </button>
+          </div>
+        </section>
+      )}
+
       {analyzing && (
         <div className="upload-receipt busy">
           <span className="upload-file-icon" aria-hidden>…</span>
@@ -206,7 +231,7 @@ function CustomerUpload({
         </button>
       )}
 
-      {submitted && (
+      {submitted && !rejected && (
         <>
           {approved && (
             <div className="income-approved">

@@ -84,6 +84,8 @@ export type FieldName =
 
 export interface DocumentProjection {
   document_state: DocumentState;
+  // Why an auto-rejected payslip was rejected (blurred / unreadable). Null unless rejected.
+  rejection_reason: string | null;
   provider: string;
   threshold: number;
   uploaded_document: {
