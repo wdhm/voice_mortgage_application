@@ -163,7 +163,7 @@ function EmmaCaseDetail({
             <h3>
               {accepted
                 ? "lonespec-northstar-hifi.pdf"
-                : caseView?.uploaded_document?.filename ?? "lonespec-northstar-scan.html"}
+                : caseView?.uploaded_document?.filename ?? "lonespec-northstar-scan.pdf"}
             </h3>
           </div>
           <span className="evidence-source">Content Understanding · simulated</span>
