@@ -159,6 +159,38 @@
         color: var(--cp-text-soft);
         font-size: 0.85rem;
       }
+      .hint {
+        color: var(--cp-text-soft);
+        font-size: 0.85rem;
+        margin: -6px 0 18px;
+      }
+      kbd {
+        font-family: Consolas, "Courier New", Courier, monospace;
+        font-size: 0.78rem;
+        background: var(--cp-surface);
+        border: 1px solid var(--cp-border);
+        border-bottom-width: 2px;
+        border-radius: 5px;
+        padding: 1px 6px;
+        color: var(--cp-text-muted);
+      }
+      .counter {
+        font-family: Consolas, "Courier New", Courier, monospace;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--cp-text-muted);
+        padding: 4px 10px;
+        border: 1px solid var(--cp-border);
+        border-radius: 999px;
+        background: var(--cp-surface);
+      }
+      .caption {
+        font-family: Consolas, "Courier New", Courier, monospace;
+        font-size: 0.85rem;
+        color: var(--cp-accent);
+        font-weight: 600;
+        min-height: 1.2em;
+      }
 
       /* Diagram */
       .diagram {
@@ -374,10 +406,17 @@
       </header>
 
       <div class="toolbar">
-        <button class="btn primary" id="play">▶ Play handover</button>
+        <button class="btn primary" id="next">Next step ▸</button>
+        <button class="btn" id="prev">◂ Back</button>
+        <button class="btn" id="auto">▶ Auto-play</button>
         <button class="btn" id="reset">Reset</button>
-        <span class="hint">Or click the orchestrator or a specialist to explore its handoff.</span>
+        <span class="counter" id="counter">0 / 9</span>
+        <span class="caption" id="caption"></span>
       </div>
+      <p class="hint" id="hint">
+        Click the diagram or press <kbd>Space</kbd> / <kbd>→</kbd> to advance ·
+        <kbd>←</kbd> back · <kbd>Esc</kbd> reset
+      </p>
 
       <div class="diagram" id="diagram">
         <svg class="wires" id="wires" aria-hidden="true">
@@ -446,17 +485,17 @@
     </div>
 
     <script>
-      // Scripted handover sequence that drives the animated playback.
+      // Scripted handover sequence that drives the step-through / auto playback.
       const SCRIPT = [
-        { agent: "orchestrator" },
-        { agent: "card_agent", wire: "card" },
-        { agent: "card_agent", action: "list_cards" },
-        { agent: "card_agent", action: "block_card" },
-        { agent: "card_agent", action: "order_replacement" },
-        { agent: "orchestrator" },
-        { agent: "mortgage_agent", wire: "mortgage" },
-        { agent: "mortgage_agent", action: "check_income_status" },
-        { agent: "mortgage_agent", action: "book_advisor_meeting" },
+        { agent: "orchestrator", caption: "voice orchestrator · listening" },
+        { agent: "card_agent", wire: "card", caption: "handoff_to_card_agent" },
+        { agent: "card_agent", action: "list_cards", caption: "list_cards()" },
+        { agent: "card_agent", action: "block_card", caption: "block_card()" },
+        { agent: "card_agent", action: "order_replacement", caption: "order_replacement()" },
+        { agent: "orchestrator", caption: "back to orchestrator" },
+        { agent: "mortgage_agent", wire: "mortgage", caption: "handoff_to_mortgage_agent" },
+        { agent: "mortgage_agent", action: "check_income_status", caption: "check_income_status()" },
+        { agent: "mortgage_agent", action: "book_advisor_meeting", caption: "book_advisor_meeting()" },
       ];
 
       const els = {
@@ -467,8 +506,12 @@
         labelCard: document.getElementById("label-card"),
         labelMortgage: document.getElementById("label-mortgage"),
         flowDot: document.getElementById("flow-dot"),
-        play: document.getElementById("play"),
+        next: document.getElementById("next"),
+        prev: document.getElementById("prev"),
+        auto: document.getElementById("auto"),
         reset: document.getElementById("reset"),
+        counter: document.getElementById("counter"),
+        caption: document.getElementById("caption"),
         orchestrator: document.getElementById("node-orchestrator"),
         card_agent: document.getElementById("node-card_agent"),
         mortgage_agent: document.getElementById("node-mortgage_agent"),
@@ -540,8 +583,10 @@
         document.getElementById("wire-" + otherWire).classList.add("dim");
       }
 
-      // ---- Animated playback ---------------------------------------------- //
+      // ---- Step-through controller + auto playback ------------------------ //
       let timer = null;
+      let autoOn = false;
+      let stepIndex = -1; // -1 = static diagram, nothing highlighted yet.
 
       function animateWire(wireKey, cb) {
         const path = wireKey === "card" ? els.wireCard : els.wireMortgage;
@@ -564,54 +609,137 @@
         requestAnimationFrame(frame);
       }
 
-      function playStep(i) {
-        if (i >= SCRIPT.length) {
+      // Actions to keep lit at step i: the contiguous run of same-agent action
+      // steps ending at i (reset whenever a handoff / agent change occurs).
+      function activeActions(i) {
+        const out = [];
+        for (let j = i; j >= 0; j--) {
+          const s = SCRIPT[j];
+          if (s.agent !== SCRIPT[i].agent || s.wire) break;
+          if (s.action) out.push(s.action);
+        }
+        return out;
+      }
+
+      function render(i, animate) {
+        stepIndex = i;
+        els.counter.textContent = Math.max(i + 1, 0) + " / " + SCRIPT.length;
+
+        if (i < 0) {
+          clearHighlights();
+          els.caption.textContent = "";
+          els.prev.disabled = true;
+          els.next.disabled = false;
           return;
         }
         const s = SCRIPT[i];
         focusAgent(s.agent);
-
-        if (s.action) {
-          const chip = els[s.agent].querySelector('[data-action="' + s.action + '"]');
+        activeActions(i).forEach((a) => {
+          const chip = els[s.agent].querySelector('[data-action="' + a + '"]');
           if (chip) chip.classList.add("fire");
-        }
+        });
+        els.caption.textContent = s.caption || "";
+        els.prev.disabled = false;
+        els.next.disabled = i >= SCRIPT.length - 1 && !autoOn;
 
-        const next = () => {
-          timer = setTimeout(() => playStep(i + 1), s.action ? 780 : 620);
-        };
-        if (s.wire) {
-          animateWire(s.wire, next);
-        } else {
-          next();
-        }
+        if (animate && s.wire) animateWire(s.wire);
       }
 
-      function play() {
+      function stopAuto() {
+        autoOn = false;
         clearTimeout(timer);
-        clearHighlights();
-        playStep(0);
+        els.auto.textContent = "▶ Auto-play";
+      }
+
+      function next() {
+        if (stepIndex >= SCRIPT.length - 1) return;
+        render(stepIndex + 1, true);
+      }
+
+      function prev() {
+        if (stepIndex <= 0) {
+          render(-1, false);
+          return;
+        }
+        render(stepIndex - 1, false);
       }
 
       function reset() {
-        clearTimeout(timer);
-        clearHighlights();
+        stopAuto();
+        render(-1, false);
+      }
+
+      function autoTick() {
+        if (stepIndex >= SCRIPT.length - 1) {
+          stopAuto();
+          return;
+        }
+        render(stepIndex + 1, true);
+        const s = SCRIPT[stepIndex];
+        timer = setTimeout(autoTick, s.wire ? 950 : 900);
+      }
+
+      function toggleAuto() {
+        if (autoOn) {
+          stopAuto();
+          return;
+        }
+        autoOn = true;
+        els.auto.textContent = "❚❚ Pause";
+        if (stepIndex >= SCRIPT.length - 1) render(-1, false);
+        autoTick();
       }
 
       // ---- Wire up --------------------------------------------------------- //
-      [els.orchestrator, els.card_agent, els.mortgage_agent].forEach((node) => {
-        node.addEventListener("click", () => {
-          clearTimeout(timer);
-          focusAgent(node.dataset.agent);
-        });
+      els.next.addEventListener("click", () => {
+        stopAuto();
+        next();
       });
-      els.play.addEventListener("click", play);
+      els.prev.addEventListener("click", () => {
+        stopAuto();
+        prev();
+      });
+      els.auto.addEventListener("click", toggleAuto);
       els.reset.addEventListener("click", reset);
-      window.addEventListener("resize", drawWires);
 
-      // Draw after layout settles.
+      // Click anywhere on the diagram advances one step (great for slides).
+      els.diagram.addEventListener("click", () => {
+        stopAuto();
+        next();
+      });
+
+      // Keyboard controls for presenting.
+      window.addEventListener("keydown", (e) => {
+        if (e.key === " " || e.key === "ArrowRight" || e.key === "Enter" || e.key === "PageDown") {
+          e.preventDefault();
+          stopAuto();
+          next();
+        } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+          e.preventDefault();
+          stopAuto();
+          prev();
+        } else if (e.key === "Escape" || e.key === "Home") {
+          e.preventDefault();
+          reset();
+        } else if (e.key.toLowerCase() === "a") {
+          e.preventDefault();
+          toggleAuto();
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        drawWires();
+        // Keep the wire animation aligned after a resize by re-rendering statically.
+        if (stepIndex >= 0) render(stepIndex, false);
+      });
+
+      // Draw after layout settles, then show the static starting diagram.
       requestAnimationFrame(() => {
         drawWires();
-        requestAnimationFrame(drawWires);
+        requestAnimationFrame(() => {
+          drawWires();
+          render(-1, false);
+        });
       });
     </script>
   </body>
