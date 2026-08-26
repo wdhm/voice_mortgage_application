@@ -6,10 +6,10 @@
     <title>Bank Alfa — Voice Agent Orchestration</title>
     <script>
       (() => {
+        // Default to the light Bank Alfa web look (the web app has no dark mode).
+        // An explicit ?scoutTheme=dark override is still honoured for embedding.
         const param = new URLSearchParams(window.location.search).get("scoutTheme");
-        const theme =
-          param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-        document.documentElement.setAttribute("data-theme", theme);
+        document.documentElement.setAttribute("data-theme", param || "light");
       })();
     </script>
     <style>
@@ -187,7 +187,7 @@
       .caption {
         font-family: Consolas, "Courier New", Courier, monospace;
         font-size: 0.85rem;
-        color: var(--cp-accent);
+        color: var(--cp-success);
         font-weight: 600;
         min-height: 1.2em;
       }
@@ -219,7 +219,7 @@
         transition: stroke 0.2s ease, opacity 0.2s ease, stroke-width 0.2s ease;
       }
       .wire.active {
-        stroke: var(--cp-accent);
+        stroke: var(--cp-success);
         opacity: 1;
         stroke-width: 3.5;
       }
@@ -234,10 +234,10 @@
         transition: fill 0.2s ease, opacity 0.2s ease;
       }
       .wire-label.active {
-        fill: var(--cp-accent);
+        fill: var(--cp-success);
       }
       .flow-dot {
-        fill: var(--cp-accent);
+        fill: var(--cp-success);
         opacity: 0;
       }
       .flow-dot.on {
@@ -275,8 +275,8 @@
         border-color: var(--cp-border-strong);
       }
       .node.active {
-        border-color: var(--cp-accent);
-        box-shadow: 0 0 0 3px var(--cp-accent-soft), var(--cp-shadow);
+        border-color: var(--cp-success);
+        box-shadow: 0 0 0 3px var(--cp-success-soft), var(--cp-shadow);
       }
       .node.dim {
         opacity: 0.5;
@@ -316,6 +316,7 @@
         padding: 18px 20px 20px;
         display: flex;
         flex-direction: column;
+        border-top: 3px solid var(--cp-success);
       }
       .sub-head {
         display: flex;
@@ -374,9 +375,9 @@
         transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
       }
       .chip.fire {
-        background: var(--cp-accent);
-        border-color: var(--cp-accent);
-        color: var(--cp-accent-fg);
+        background: var(--cp-success);
+        border-color: var(--cp-success);
+        color: #ffffff;
       }
 
       @media (max-width: 720px) {
