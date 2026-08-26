@@ -15,55 +15,49 @@
     <style>
       :root {
         color-scheme: light;
-        --cp-bg: #f7f4ef;
-        --cp-bg-elevated: #fcfbf8;
+        /* Aligned with the Bank Alfa web app palette (web/src/styles.css). */
+        --cp-bg: #f4f6f5;
+        --cp-bg-elevated: #fbfcfc;
         --cp-surface: #ffffff;
-        --cp-surface-soft: #f5f5f5;
-        --cp-border: #dedede;
-        --cp-border-strong: #919191;
-        --cp-text: #242424;
-        --cp-text-muted: #5c5c5c;
-        --cp-text-soft: #6f6f6f;
-        --cp-accent: #b11f4b;
-        --cp-accent-hover: #9a1a41;
-        --cp-accent-soft: rgba(177, 31, 75, 0.08);
+        --cp-surface-soft: #eef1f0;
+        --cp-border: #d5dcda;
+        --cp-border-strong: #7d8a89;
+        --cp-text: #172126;
+        --cp-text-muted: #52605f;
+        --cp-text-soft: #7d8a89;
+        --cp-accent: #c9343a;
+        --cp-accent-hover: #b02e33;
+        --cp-accent-soft: rgba(201, 52, 58, 0.08);
         --cp-accent-fg: #ffffff;
-        --cp-success: #16a34a;
-        --cp-danger: #dc2626;
-        --cp-warning: #f59e0b;
-        --cp-link: #0078d4;
-        --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
-        --cp-overlay: rgba(255, 255, 255, 0.8);
-        --cp-panel: rgba(255, 255, 255, 0.86);
-        --cp-panel-strong: rgba(255, 255, 255, 0.96);
-        --cp-sheen: rgba(255, 255, 255, 0.55);
-        --cp-highlight: rgba(177, 31, 75, 0.12);
+        --cp-success: #087f78;
+        --cp-success-soft: rgba(8, 127, 120, 0.1);
+        --cp-danger: #b42318;
+        --cp-link: #087f78;
+        --cp-shadow: 0 16px 40px rgba(23, 33, 38, 0.12);
+        --cp-highlight: rgba(201, 52, 58, 0.1);
       }
       html[data-theme="dark"] {
         color-scheme: dark;
-        --cp-bg: #3d3b3a;
-        --cp-bg-elevated: #343231;
-        --cp-surface: #292929;
-        --cp-surface-soft: #2e2e2e;
-        --cp-border: #474747;
-        --cp-border-strong: #5f5f5f;
-        --cp-text: #dedede;
-        --cp-text-muted: #919191;
-        --cp-text-soft: #b0b0b0;
-        --cp-accent: #fd8ea1;
-        --cp-accent-hover: #fb7b91;
-        --cp-accent-soft: rgba(253, 142, 161, 0.14);
-        --cp-accent-fg: #1a1a1a;
-        --cp-success: #4ade80;
-        --cp-danger: #f87171;
-        --cp-warning: #fbbf24;
-        --cp-link: #4da6ff;
-        --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
-        --cp-overlay: rgba(41, 41, 41, 0.88);
-        --cp-panel: rgba(41, 41, 41, 0.72);
-        --cp-panel-strong: rgba(41, 41, 41, 0.96);
-        --cp-sheen: rgba(255, 255, 255, 0.04);
-        --cp-highlight: rgba(253, 142, 161, 0.12);
+        /* Dark variant keeps the same Bank Alfa red + teal so nothing clashes. */
+        --cp-bg: #10191a;
+        --cp-bg-elevated: #16211f;
+        --cp-surface: #182a2a;
+        --cp-surface-soft: #1f302f;
+        --cp-border: #2c3d3b;
+        --cp-border-strong: #4a5c5a;
+        --cp-text: #eef2f1;
+        --cp-text-muted: #a7b6b4;
+        --cp-text-soft: #849694;
+        --cp-accent: #e2565b;
+        --cp-accent-hover: #ef6a6e;
+        --cp-accent-soft: rgba(226, 86, 91, 0.16);
+        --cp-accent-fg: #10191a;
+        --cp-success: #4bbdb4;
+        --cp-success-soft: rgba(75, 189, 180, 0.16);
+        --cp-danger: #f2a29a;
+        --cp-link: #4bbdb4;
+        --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.4);
+        --cp-highlight: rgba(226, 86, 91, 0.14);
       }
 
       * {
@@ -77,7 +71,7 @@
       body {
         background: var(--cp-bg);
         color: var(--cp-text);
-        font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: "Space Grotesk", "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
         line-height: 1.5;
         -webkit-font-smoothing: antialiased;
       }
@@ -304,8 +298,8 @@
         border-radius: 10px;
         display: grid;
         place-items: center;
-        background: var(--cp-accent-soft);
-        color: var(--cp-accent);
+        background: var(--cp-success-soft);
+        color: var(--cp-success);
         font-size: 1.2rem;
       }
       .sub-name {
@@ -353,95 +347,6 @@
         color: var(--cp-accent-fg);
       }
 
-      /* Transcript panel */
-      .transcript {
-        margin-top: 26px;
-        border: 1px solid var(--cp-border);
-        border-radius: 16px;
-        background: var(--cp-bg-elevated);
-        overflow: hidden;
-      }
-      .transcript-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        padding: 14px 20px;
-        border-bottom: 1px solid var(--cp-border);
-      }
-      .transcript-head h2 {
-        margin: 0;
-        font-size: 0.98rem;
-        font-weight: 620;
-      }
-      .transcript-head .who {
-        font-size: 0.8rem;
-        color: var(--cp-text-soft);
-      }
-      .steps {
-        list-style: none;
-        margin: 0;
-        padding: 8px 0;
-      }
-      .step {
-        display: grid;
-        grid-template-columns: 116px 1fr;
-        gap: 14px;
-        padding: 10px 20px;
-        border-left: 3px solid transparent;
-        opacity: 0.4;
-        transition: opacity 0.25s ease, background 0.25s ease, border-color 0.25s ease;
-      }
-      .step.shown {
-        opacity: 1;
-      }
-      .step.current {
-        background: var(--cp-highlight);
-        border-left-color: var(--cp-accent);
-      }
-      .step .actor {
-        font-size: 0.78rem;
-        font-weight: 650;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--cp-text-soft);
-        padding-top: 2px;
-      }
-      .step .actor.customer {
-        color: var(--cp-link);
-      }
-      .step .actor.orchestrator {
-        color: var(--cp-accent);
-      }
-      .step .actor.card_agent,
-      .step .actor.mortgage_agent {
-        color: var(--cp-success);
-      }
-      .step .msg {
-        font-size: 0.92rem;
-      }
-      .step .msg code {
-        font-family: Consolas, "Courier New", Courier, monospace;
-        font-size: 0.85rem;
-        background: var(--cp-surface-soft);
-        border: 1px solid var(--cp-border);
-        border-radius: 6px;
-        padding: 1px 6px;
-      }
-
-      footer.note {
-        margin-top: 22px;
-        color: var(--cp-text-soft);
-        font-size: 0.82rem;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px 18px;
-      }
-      footer.note b {
-        color: var(--cp-text-muted);
-        font-weight: 620;
-      }
-
       @media (max-width: 720px) {
         .subagent-row {
           grid-template-columns: 1fr;
@@ -449,10 +354,6 @@
         }
         .orch-row {
           margin-bottom: 88px;
-        }
-        .step {
-          grid-template-columns: 1fr;
-          gap: 3px;
         }
       }
     </style>
@@ -542,84 +443,21 @@
           </div>
         </div>
       </div>
-
-      <section class="transcript">
-        <div class="transcript-head">
-          <h2 id="transcript-title">Example handover</h2>
-          <span class="who" id="transcript-who">Press “Play handover” to watch the flow</span>
-        </div>
-        <ol class="steps" id="steps"></ol>
-      </section>
-
-      <footer class="note">
-        <span><b>Illustrative demo.</b> Bank Alfa systems are mocked; a human advisor owns every lending decision.</span>
-        <span><b>Additive.</b> This view mirrors the governed tools in <code style="font-family: Consolas, monospace">app/tools/handlers.py</code>.</span>
-      </footer>
     </div>
 
     <script>
-      // ---- Scripted handover transcript ------------------------------------ //
+      // Scripted handover sequence that drives the animated playback.
       const SCRIPT = [
-        {
-          actor: "customer",
-          agent: "orchestrator",
-          html: '“Hi, I think I’ve <b>lost my card</b>.”',
-        },
-        {
-          actor: "orchestrator",
-          agent: "card_agent",
-          wire: "card",
-          html: 'Routes card intent → <code>handoff_to_card_agent</code>.',
-        },
-        {
-          actor: "card_agent",
-          agent: "card_agent",
-          action: "list_cards",
-          html: '<code>list_cards()</code> → matches the card by its last four digits.',
-        },
-        {
-          actor: "card_agent",
-          agent: "card_agent",
-          action: "block_card",
-          html: '<code>block_card(last_four="4821", reason="lost")</code> → status <b>blocked</b>.',
-        },
-        {
-          actor: "card_agent",
-          agent: "card_agent",
-          action: "order_replacement",
-          html: '<code>order_replacement()</code> → <code>RPL-…</code>, 3–5 business days.',
-        },
-        {
-          actor: "customer",
-          agent: "orchestrator",
-          html: '“Also, is my payslip enough for the <b>mortgage</b>? Can I book the advisor?”',
-        },
-        {
-          actor: "orchestrator",
-          agent: "mortgage_agent",
-          wire: "mortgage",
-          html: 'Routes mortgage intent → <code>handoff_to_mortgage_agent</code>.',
-        },
-        {
-          actor: "mortgage_agent",
-          agent: "mortgage_agent",
-          action: "check_income_status",
-          html: '<code>check_income_status()</code> → payslip accepted, income verified.',
-        },
-        {
-          actor: "mortgage_agent",
-          agent: "mortgage_agent",
-          action: "book_advisor_meeting",
-          html: '<code>book_advisor_meeting(slot_id="slot-2026-09-03-am")</code> → booked.',
-        },
+        { agent: "orchestrator" },
+        { agent: "card_agent", wire: "card" },
+        { agent: "card_agent", action: "list_cards" },
+        { agent: "card_agent", action: "block_card" },
+        { agent: "card_agent", action: "order_replacement" },
+        { agent: "orchestrator" },
+        { agent: "mortgage_agent", wire: "mortgage" },
+        { agent: "mortgage_agent", action: "check_income_status" },
+        { agent: "mortgage_agent", action: "book_advisor_meeting" },
       ];
-
-      const AGENT_LABEL = {
-        customer: "Customer",
-        orchestrator: "Orchestrator",
-        card_agent: "CardAgent",
-        mortgage_agent: "MortgageAgent",
-      };
 
       const els = {
         diagram: document.getElementById("diagram"),
@@ -629,8 +467,6 @@
         labelCard: document.getElementById("label-card"),
         labelMortgage: document.getElementById("label-mortgage"),
         flowDot: document.getElementById("flow-dot"),
-        steps: document.getElementById("steps"),
-        who: document.getElementById("transcript-who"),
         play: document.getElementById("play"),
         reset: document.getElementById("reset"),
         orchestrator: document.getElementById("node-orchestrator"),
@@ -692,7 +528,6 @@
           els.wireMortgage.classList.add("active");
           els.labelCard.classList.add("active");
           els.labelMortgage.classList.add("active");
-          els.who.textContent = "Orchestrator · hands off to both specialists";
           return;
         }
         const wire = agent === "card_agent" ? "card" : "mortgage";
@@ -703,21 +538,6 @@
         document.getElementById("wire-" + wire).classList.add("active");
         document.getElementById("label-" + wire).classList.add("active");
         document.getElementById("wire-" + otherWire).classList.add("dim");
-        els.who.textContent = "Orchestrator → " + AGENT_LABEL[agent];
-      }
-
-      // ---- Build transcript rows ------------------------------------------ //
-      function buildSteps() {
-        els.steps.innerHTML = "";
-        SCRIPT.forEach((s, i) => {
-          const li = document.createElement("li");
-          li.className = "step";
-          li.dataset.index = i;
-          li.innerHTML =
-            '<span class="actor ' + s.actor + '">' + AGENT_LABEL[s.actor] + "</span>" +
-            '<span class="msg">' + s.html + "</span>";
-          els.steps.appendChild(li);
-        });
       }
 
       // ---- Animated playback ---------------------------------------------- //
@@ -745,16 +565,10 @@
       }
 
       function playStep(i) {
-        const stepEls = els.steps.querySelectorAll(".step");
-        stepEls.forEach((el) => el.classList.remove("current"));
         if (i >= SCRIPT.length) {
-          els.who.textContent = "Handover complete — customer’s part is done; advisor decides.";
           return;
         }
         const s = SCRIPT[i];
-        const li = stepEls[i];
-        li.classList.add("shown", "current");
-        li.scrollIntoView({ behavior: "smooth", block: "nearest" });
         focusAgent(s.agent);
 
         if (s.action) {
@@ -775,19 +589,12 @@
       function play() {
         clearTimeout(timer);
         clearHighlights();
-        els.steps.querySelectorAll(".step").forEach((el) =>
-          el.classList.remove("shown", "current")
-        );
         playStep(0);
       }
 
       function reset() {
         clearTimeout(timer);
         clearHighlights();
-        els.who.textContent = "Press “Play handover” to watch the flow";
-        els.steps.querySelectorAll(".step").forEach((el) =>
-          el.classList.remove("shown", "current")
-        );
       }
 
       // ---- Wire up --------------------------------------------------------- //
@@ -801,7 +608,6 @@
       els.reset.addEventListener("click", reset);
       window.addEventListener("resize", drawWires);
 
-      buildSteps();
       // Draw after layout settles.
       requestAnimationFrame(() => {
         drawWires();
