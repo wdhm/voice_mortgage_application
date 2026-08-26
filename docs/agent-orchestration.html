@@ -410,7 +410,7 @@
         <button class="btn" id="prev">◂ Back</button>
         <button class="btn" id="auto">▶ Auto-play</button>
         <button class="btn" id="reset">Reset</button>
-        <span class="counter" id="counter">0 / 9</span>
+        <span class="counter" id="counter">0 / 10</span>
         <span class="caption" id="caption"></span>
       </div>
       <p class="hint" id="hint">
@@ -495,6 +495,7 @@
         { agent: "orchestrator", caption: "back to orchestrator" },
         { agent: "mortgage_agent", wire: "mortgage", caption: "handoff_to_mortgage_agent" },
         { agent: "mortgage_agent", action: "check_income_status", caption: "check_income_status()" },
+        { agent: "mortgage_agent", action: "estimate_borrowing", caption: "estimate_borrowing()" },
         { agent: "mortgage_agent", action: "book_advisor_meeting", caption: "book_advisor_meeting()" },
       ];
 
