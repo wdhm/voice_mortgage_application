@@ -15,6 +15,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Multi-agent orchestration showcase (app/agents). Optional so the runtime image and
+# offline CI stay lean; the code degrades gracefully when this is not installed.
+agents = [
+    "agent-framework>=1.0.0",
+]
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
