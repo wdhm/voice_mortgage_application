@@ -28,7 +28,7 @@ VISA_DEBIT_ID = "card-visa-1842"
 
 # The demo opens with Emma's payslip already submitted and auto-rejected: the scan is
 # completely blurred, so Content Understanding cannot read the income fields. This is what
-# Bengt sees flagged red in the bulk review queue, and what re-upload later clears.
+# Simon sees flagged red in the bulk review queue, and what re-upload later clears.
 REJECTED_PAYSLIP_REASON = (
     "The document could not be read — the scan is too blurred to extract the income fields. "
     "A notification has been sent to the customer asking them to re-upload a clear copy."

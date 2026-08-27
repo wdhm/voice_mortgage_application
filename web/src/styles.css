@@ -200,6 +200,57 @@ body {
 .brand .mark {
   color: var(--alfa-red);
 }
+
+/* ---- View persona label + role accent -------------------------------- */
+.view-persona {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #f6f8f7;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+.view-persona-dot {
+  width: 8px;
+  height: 8px;
+  align-self: center;
+  border-radius: 50%;
+  background: var(--ink-faint);
+}
+.view-persona-name {
+  color: var(--ink);
+}
+.view-persona-sep {
+  color: var(--ink-faint);
+}
+.view-persona-view {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.header--customer {
+  box-shadow: inset 0 -3px 0 var(--verified-teal);
+}
+.header--customer .view-persona-dot {
+  background: var(--verified-teal);
+}
+.header--customer .view-persona-name {
+  color: var(--verified-teal);
+}
+
+.header--advisor {
+  box-shadow: inset 0 -3px 0 var(--alfa-red);
+}
+.header--advisor .view-persona-dot {
+  background: var(--alfa-red);
+}
+.header--advisor .view-persona-name {
+  color: var(--alfa-red);
+}
 .icon-btn {
   display: inline-flex;
   align-items: center;
