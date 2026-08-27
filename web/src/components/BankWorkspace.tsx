@@ -76,10 +76,10 @@ export function BankWorkspace({ refreshKey }: { refreshKey: number }) {
     <main className="bank-shell">
       <aside className="bank-case-menu">
         <div className="bank-user">
-          <span className="bank-user-avatar" aria-hidden>BB</span>
+          <span className="bank-user-avatar" aria-hidden>S</span>
           <div>
             <strong>Payslip review desk</strong>
-            <span>Bengt Bäckström · Bank representative</span>
+            <span>Simon · Bank representative</span>
           </div>
         </div>
 
