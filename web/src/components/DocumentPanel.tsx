@@ -183,10 +183,10 @@ function CustomerUpload({
           <div className="payslip-rejected-head">
             <span className="payslip-rejected-icon" aria-hidden>▲</span>
             <div>
-              <strong>Your payslip couldn’t be read</strong>
+              <strong>We couldn’t process your payslip</strong>
               <p>
-                This scan is too blurry for us to verify your income. Please remove it and upload a
-                clearer copy. Call us if you need help.
+                We weren’t able to process this payslip automatically. Please upload it again. If
+                you need any help, contact us and we’ll be glad to assist.
               </p>
             </div>
           </div>
