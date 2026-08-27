@@ -391,23 +391,27 @@ def write_advisor_summary(engine: ConsentEngine, case: DemoCase, args: dict) -> 
 # --------------------------------------------------------------------------- #
 def get_available_meeting_times(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOutcome:
     earliest = _parse_date(args.get("earliest_date"))
-    preferred = (args.get("preferred_time") or "afternoon").lower()
+    preferred = (args.get("preferred_time") or "any").lower()
     full_month = args.get("full_month") is True
 
     month_slots = _monthly_meeting_slots(earliest)
     if full_month:
         slots = month_slots
     else:
+        # "any" (the default) spans the whole working day so the voice agent sees the
+        # same times the calendar shows — including mornings like 09:00. The narrower
+        # part-of-day ranges only apply when the customer states a preference.
         hour_range = {
             "morning": range(8, 12),
             "midday": range(11, 15),
             "afternoon": range(13, 17),
-        }.get(preferred, range(13, 17))
+            "any": range(8, 17),
+        }.get(preferred, range(8, 17))
         slots = [
             slot
             for slot in month_slots
             if slot.start.date() >= earliest and slot.start.hour in hour_range
-        ][:5]
+        ][:6]
     offered_by_id = {slot.slot_id: slot for slot in case.offered_meeting_slots}
     offered_by_id.update({slot.slot_id: slot for slot in slots})
     case.offered_meeting_slots = sorted(offered_by_id.values(), key=lambda slot: slot.start)
@@ -479,6 +483,29 @@ def _parse_date(value) -> date:
 # --------------------------------------------------------------------------- #
 # 7. book_meeting
 # --------------------------------------------------------------------------- #
+def _resolve_meeting_slot(case: DemoCase, slot_id: str) -> MeetingSlot | None:
+    """Return the real MeetingSlot for ``slot_id``.
+
+    Prefers slots already offered in this session; otherwise regenerates the month's
+    slots from the date embedded in the id so any genuinely-available time the customer
+    names (e.g. a morning 09:00 shown on the calendar) can be booked even if the agent
+    never fetched that exact day/part-of-day.
+    """
+    existing = next((s for s in case.offered_meeting_slots if s.slot_id == slot_id), None)
+    if existing is not None:
+        return existing
+    match = re.match(r"^slot-(\d{4}-\d{2}-\d{2})-\d{4}$", slot_id or "")
+    if not match:
+        return None
+    try:
+        slot_date = date.fromisoformat(match.group(1))
+    except ValueError:
+        return None
+    return next(
+        (s for s in _monthly_meeting_slots(slot_date) if s.slot_id == slot_id), None
+    )
+
+
 def book_meeting(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOutcome:
     slot_id = args.get("slot_id")
     if not slot_id:
@@ -500,10 +527,14 @@ def book_meeting(engine: ConsentEngine, case: DemoCase, args: dict) -> ToolOutco
             label="Blocked: meeting already booked",
         )
 
-    slot = next((s for s in case.offered_meeting_slots if s.slot_id == slot_id), None)
+    slot = _resolve_meeting_slot(case, slot_id)
     if slot is None:
         raise GuardError(
-            "That slot was not offered in this session.", label="Blocked: slot not offered"
+            "That slot is not a valid advisor time.", label="Blocked: slot not available"
+        )
+    if all(s.slot_id != slot.slot_id for s in case.offered_meeting_slots):
+        case.offered_meeting_slots = sorted(
+            [*case.offered_meeting_slots, slot], key=lambda s: s.start
         )
     booking = BookedMeeting(
         slot=slot,

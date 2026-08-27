@@ -234,3 +234,53 @@ async def test_check_income_status_requires_identity(stack):
     out = await stack.tools.dispatch("check_income_status", {})
     assert not out.ok
     assert "tool.blocked_by_policy" in stack.event_types()
+
+
+# ---- appointment availability parity (regression for the 09:00 booking bug) ---- #
+# The calendar renders the whole month (full_month=True), including morning slots such
+# as slot-2026-09-22-0900. Before the fix the voice agent's default availability only
+# returned afternoon times, so a morning time shown on the calendar could not be seen
+# or booked by voice. These assertions lock the fix in place.
+MORNING_SLOT = "slot-2026-09-22-0900"  # Tuesday 22 Sep 2026, 09:00 — a real calendar slot
+
+
+async def test_voice_default_availability_includes_morning_slot(stack):
+    # Exactly what the voice agent sends: earliest_date only, no preferred_time.
+    voice = await stack.tools.dispatch(
+        "get_available_meeting_times", {"earliest_date": "2026-09-22"}
+    )
+    assert voice.ok
+    slot_ids = [s["slot_id"] for s in voice.result["slots"]]
+    assert MORNING_SLOT in slot_ids, "voice default must surface the 09:00 slot the calendar shows"
+
+
+async def test_full_month_and_voice_agree_on_morning_slot(stack):
+    # The calendar path (full_month=True) and the voice path must both expose the slot.
+    ui = await stack.tools.dispatch(
+        "get_available_meeting_times",
+        {"earliest_date": "2026-09-01", "full_month": True},
+    )
+    assert ui.ok
+    assert MORNING_SLOT in [s["slot_id"] for s in ui.result["slots"]]
+
+
+async def test_book_meeting_regenerates_unfetched_morning_slot(stack):
+    # Fresh session with no previously offered slots: booking a genuinely-available
+    # morning time must still succeed via slot regeneration, not be refused.
+    assert stack.repo.get().offered_meeting_slots == []
+    booked = await stack.tools.dispatch(
+        "book_meeting", {"slot_id": MORNING_SLOT, "purpose": "Mortgage advisory meeting"}
+    )
+    assert booked.ok and booked.result["booking_reference"].startswith("BKG-")
+    meeting = stack.repo.get().booked_meeting
+    assert meeting is not None
+    assert meeting.slot.slot_id == MORNING_SLOT
+    assert meeting.slot.start.hour == 9
+
+
+async def test_book_meeting_refuses_fabricated_slot(stack):
+    # A slot_id that is not a genuinely-generated time must still be refused.
+    out = await stack.tools.dispatch(
+        "book_meeting", {"slot_id": "slot-2026-09-19-0900"}  # Saturday: never generated
+    )
+    assert not out.ok

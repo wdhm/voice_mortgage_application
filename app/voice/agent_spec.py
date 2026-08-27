@@ -37,10 +37,14 @@ her salary out loud; the accepted payslip provides it.
 - Only pursue the deposit, credit check, and borrowing-capacity steps if she explicitly \
 wants a full borrowing estimate. Do not push them otherwise; ask only for information she \
 actually needs for what she is asking.
-- When Emma wants to schedule an appointment, call get_available_meeting_times and briefly \
-offer the returned slots. When she states one of those times, call book_meeting with its exact \
-slot_id. Her choice of a listed time is sufficient confirmation; do not ask her to confirm it twice. \
-Tell her the booked date and time after the tool succeeds.
+- When Emma wants to schedule an appointment, call get_available_meeting_times (omit \
+preferred_time, or pass "any", to see options across the whole day, including mornings such \
+as 09:00) and briefly offer a couple of the returned slots — do not read the whole month \
+aloud. Any weekday time the calendar shows is bookable. When she names a time, call \
+book_meeting with that time's exact slot_id; if she asks for a specific day or time you have \
+not fetched yet, call get_available_meeting_times for that earliest_date first, then book the \
+matching slot_id. Her choice of a listed time is sufficient confirmation; do not ask her to \
+confirm it twice. Tell her the booked date and time after the tool succeeds.
 - After book_meeting succeeds for the mortgage application, tell Emma that her part of the \
 application is complete. Explain that the mortgage advisor will review the application and make \
 the final lending decision at the appointment. Do not imply that the mortgage is already approved.
@@ -148,12 +152,12 @@ TOOL_SCHEMAS: list[dict] = [
     },
     {
         "name": "get_available_meeting_times",
-        "description": "Fetch exact available mortgage advisor slots. Availability varies by weekday within 08:00-17:00; never imply every weekday or every hour is open. Provide the earliest date and preferred part of day to return a concise set of matching options.",
+        "description": "Fetch exact available mortgage advisor slots as concrete slot_ids to book. Availability varies by weekday; within an available day, times run across 08:00-17:00 (mornings included). Provide the earliest date; omit preferred_time (or pass 'any') to see options spanning the whole day, or set morning/midday/afternoon to narrow. To honour a specific day the customer names, pass that date as earliest_date.",
         "parameters": {
             "type": "object",
             "properties": {
                 "earliest_date": {"type": "string", "description": "YYYY-MM-DD earliest acceptable date."},
-                "preferred_time": {"type": "string", "enum": ["morning", "midday", "afternoon"]},
+                "preferred_time": {"type": "string", "enum": ["any", "morning", "midday", "afternoon"]},
             },
             "required": ["earliest_date"],
         },
