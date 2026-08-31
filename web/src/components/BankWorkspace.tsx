@@ -36,6 +36,7 @@ export function BankWorkspace({ refreshKey }: { refreshKey: number }) {
   const [records, setRecords] = useState<BankPayslipRecord[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string>("emma");
+  const [workspacePage, setWorkspacePage] = useState<"overview" | "case">("overview");
   const [approving, setApproving] = useState(false);
 
   const loadWorkspace = useCallback(() => {
@@ -58,6 +59,10 @@ export function BankWorkspace({ refreshKey }: { refreshKey: number }) {
 
   const flaggedCount = emmaAccepted || emmaReviewRequired ? 0 : 1;
   const selectedApplicant = queue.find((record) => record.id === selected) ?? queue.find((record) => record.id === "emma");
+  const openApplication = (id: string) => {
+    setSelected(id);
+    setWorkspacePage("case");
+  };
 
   const approveEmma = async () => {
     setApproving(true);
@@ -72,9 +77,27 @@ export function BankWorkspace({ refreshKey }: { refreshKey: number }) {
     }
   };
 
+  if (workspacePage === "overview") {
+    return (
+      <BankApplicationOverview
+        caseView={caseView}
+        records={queue}
+        loadError={loadError}
+        onOpen={openApplication}
+      />
+    );
+  }
+
   return (
     <main className="bank-shell">
       <aside className="bank-case-menu">
+        <button
+          type="button"
+          className="bank-overview-link"
+          onClick={() => setWorkspacePage("overview")}
+        >
+          ← Application overview
+        </button>
         <div className="bank-user">
           <span className="bank-user-avatar" aria-hidden>S</span>
           <div>
@@ -109,7 +132,7 @@ export function BankWorkspace({ refreshKey }: { refreshKey: number }) {
                   type="button"
                   className={`queue-row ${record.id === selected ? "active" : ""} ${tone}`}
                   aria-pressed={record.id === selected}
-                  onClick={() => setSelected(record.id)}
+                  onClick={() => openApplication(record.id)}
                 >
                   <span className="customer-initials" aria-hidden>{record.customer.initials}</span>
                   <span className="queue-row-body">
@@ -147,6 +170,145 @@ export function BankWorkspace({ refreshKey }: { refreshKey: number }) {
           <AcceptedCaseDetail record={selectedApplicant} />
         ) : (
           <p>Loading payslip queue…</p>
+        )}
+      </section>
+    </main>
+  );
+}
+
+function BankApplicationOverview({
+  caseView,
+  records,
+  loadError,
+  onOpen,
+}: {
+  caseView: DemoCaseView | null;
+  records: BankPayslipRecord[];
+  loadError: string | null;
+  onOpen: (id: string) => void;
+}) {
+  const actionRequired = records.filter((record) => record.status !== "accepted").length;
+  const appointmentBooked = caseView?.booked_meeting !== null;
+
+  const applicationStatus = (record: BankPayslipRecord) => {
+    if (record.status === "rejected") {
+      return {
+        stage: "Income verification",
+        label: "Customer action needed",
+        detail: "Unreadable payslip",
+        tone: "attention",
+      };
+    }
+    if (record.status === "review_required") {
+      return {
+        stage: "Income verification",
+        label: "Manual review",
+        detail: "Document ready for approval",
+        tone: "review",
+      };
+    }
+    if (record.id === "emma" && appointmentBooked) {
+      return {
+        stage: "Advisor appointment",
+        label: "Meeting booked",
+        detail: "Ready for advisor review",
+        tone: "booked",
+      };
+    }
+    return {
+      stage: "Appointment",
+      label: "Income verified",
+      detail: "Waiting for customer booking",
+      tone: "verified",
+    };
+  };
+
+  return (
+    <main className="bank-overview">
+      <header className="bank-overview-hero">
+        <div>
+          <p className="eyebrow">Mortgage operations</p>
+          <h1>Good morning, Simon</h1>
+          <p>Here is the current status of your ongoing mortgage applications.</p>
+        </div>
+        <div className="bank-overview-date">
+          <span>Portfolio</span>
+          <strong>{records.length} active applications</strong>
+        </div>
+      </header>
+
+      <section className="bank-portfolio-stats" aria-label="Application summary">
+        <article>
+          <span>Ongoing applications</span>
+          <strong>{records.length}</strong>
+          <small>Assigned to your review desk</small>
+        </article>
+        <article className={actionRequired ? "attention" : ""}>
+          <span>Needs attention</span>
+          <strong>{actionRequired}</strong>
+          <small>Customer or manual action required</small>
+        </article>
+        <article>
+          <span>Income verified</span>
+          <strong>{records.filter((record) => record.status === "accepted").length}</strong>
+          <small>Ready for the appointment stage</small>
+        </article>
+      </section>
+
+      <section className="bank-applications-card">
+        <div className="bank-applications-heading">
+          <div>
+            <p className="eyebrow">Application portfolio</p>
+            <h2>Ongoing applications</h2>
+          </div>
+          <span>Updated live</span>
+        </div>
+        {loadError ? (
+          <p className="queue-load-error" role="alert">{loadError}</p>
+        ) : records.length === 0 ? (
+          <p className="bank-overview-empty">Loading applications…</p>
+        ) : (
+          <div className="bank-applications-table" role="table" aria-label="Ongoing mortgage applications">
+            <div className="bank-application-row header" role="row">
+              <span role="columnheader">Applicant</span>
+              <span role="columnheader">Application</span>
+              <span role="columnheader">Current stage</span>
+              <span role="columnheader">Status</span>
+              <span aria-hidden />
+            </div>
+            {records.map((record, index) => {
+              const status = applicationStatus(record);
+              return (
+                <button
+                  key={record.id}
+                  type="button"
+                  className="bank-application-row"
+                  onClick={() => onOpen(record.id)}
+                  role="row"
+                >
+                  <span className="bank-applicant" role="cell">
+                    <span className="customer-initials" aria-hidden>{record.customer.initials}</span>
+                    <span>
+                      <strong>{record.customer.name}</strong>
+                      <small>{record.customer.city}</small>
+                    </span>
+                  </span>
+                  <span className="bank-application-id" role="cell">
+                    <strong>{record.id === "emma" ? caseView?.case_id ?? "MOR-104857" : `MOR-${104862 + index}`}</strong>
+                    <small>Mortgage application</small>
+                  </span>
+                  <span className="bank-stage" role="cell">
+                    <strong>{status.stage}</strong>
+                    <small>{status.detail}</small>
+                  </span>
+                  <span role="cell">
+                    <span className={`application-status ${status.tone}`}>{status.label}</span>
+                  </span>
+                  <span className="application-open" aria-hidden>→</span>
+                </button>
+              );
+            })}
+          </div>
         )}
       </section>
     </main>
