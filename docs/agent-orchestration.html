@@ -389,6 +389,114 @@
           margin-bottom: 88px;
         }
       }
+
+      /* ---- Credibility annotations (additive) ---------------------------- */
+      .node {
+        position: relative;
+      }
+      .anno-badge {
+        position: absolute;
+        top: -11px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-family: Consolas, "Courier New", Courier, monospace;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #ffffff;
+        background: var(--cp-accent);
+        border: 2px solid var(--cp-bg-elevated);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        z-index: 3;
+        cursor: help;
+      }
+      .anno-badge.teal {
+        background: var(--cp-success);
+      }
+      .anno-badge.a1 {
+        right: 14px;
+      }
+      .anno-badge.a2 {
+        right: 44px;
+      }
+      .anno-badge.a-left {
+        left: 14px;
+        top: -11px;
+      }
+
+      .legend {
+        margin-top: 22px;
+        background: var(--cp-bg-elevated);
+        border: 1px solid var(--cp-border);
+        border-radius: 16px;
+        padding: 20px 24px 22px;
+        box-shadow: 0 0 2px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.14);
+      }
+      .legend-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .legend-title {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 640;
+      }
+      .legend-sub {
+        margin: 2px 0 16px;
+        color: var(--cp-text-muted);
+        font-size: 0.9rem;
+        max-width: 720px;
+      }
+      .legend-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 12px 20px;
+      }
+      .legend-item {
+        display: grid;
+        grid-template-columns: 26px 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .legend-num {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-family: Consolas, "Courier New", Courier, monospace;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #ffffff;
+        background: var(--cp-accent);
+      }
+      .legend-num.teal {
+        background: var(--cp-success);
+      }
+      .legend-item h4 {
+        margin: 2px 0 2px;
+        font-size: 0.92rem;
+        font-weight: 620;
+      }
+      .legend-item p {
+        margin: 0;
+        font-size: 0.84rem;
+        color: var(--cp-text-muted);
+      }
+      .legend-item code {
+        font-family: Consolas, "Courier New", Courier, monospace;
+        font-size: 0.8rem;
+        background: var(--cp-surface-soft);
+        border: 1px solid var(--cp-border);
+        padding: 0 5px;
+        border-radius: 5px;
+      }
     </style>
   </head>
   <body>
@@ -431,6 +539,9 @@
         <div class="nodes">
           <div class="orch-row">
             <div class="node orchestrator selectable" id="node-orchestrator" data-agent="orchestrator">
+              <span class="anno-badge a1" title="Intent classification — the orchestrator triages every turn before any handoff">1</span>
+              <span class="anno-badge a2 teal" title="Tracing / observability — each turn emits OpenTelemetry spans to Foundry Observability">6</span>
+              <span class="anno-badge a-left teal" title="Independent versioning — orchestrator prompt is versioned & deployed separately from the specialists">7</span>
               <span class="kicker">Orchestrator · voice</span>
               <p class="node-name">VoiceOrchestratorAgent</p>
               <p class="node-role">
@@ -442,6 +553,7 @@
 
           <div class="subagent-row">
             <div class="node subagent selectable" id="node-card_agent" data-agent="card_agent">
+              <span class="anno-badge a1" title="Wrong-specialist detection — a mis-routed turn is re-handed to the correct agent">3</span>
               <div class="sub-head">
                 <div class="sub-icon">▣</div>
                 <div>
@@ -462,6 +574,9 @@
             </div>
 
             <div class="node subagent selectable" id="node-mortgage_agent" data-agent="mortgage_agent">
+              <span class="anno-badge a1" title="Conversation context is carried across the handoff — the specialist inherits the customer + turn history">2</span>
+              <span class="anno-badge a2 teal" title="Tool timeouts fall back to a retry / safe response instead of failing the turn">4</span>
+              <span class="anno-badge a-left teal" title="Backend tool calls authenticate keyless via DefaultAzureCredential (no secrets in prompts)">5</span>
               <div class="sub-head">
                 <div class="sub-icon">⌂</div>
                 <div>
@@ -479,6 +594,93 @@
                 <span class="chip" data-action="estimate_borrowing">estimate_borrowing()</span>
                 <span class="chip" data-action="book_advisor_meeting">book_advisor_meeting()</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-head">
+          <h2 class="legend-title">What makes this a real application, not toy routing</h2>
+          <span class="badge"><span class="dot"></span>Engineering credibility · numbered on the diagram</span>
+        </div>
+        <p class="legend-sub">
+          The handoff diagram above is the happy path. In production each numbered point is a
+          concrete engineering control — classification, context, fallbacks, keyless auth,
+          observability and independent versioning.
+        </p>
+        <div class="legend-grid">
+          <div class="legend-item">
+            <span class="legend-num">1</span>
+            <div>
+              <h4>Intent classification at the orchestrator</h4>
+              <p>
+                <code>voice_orchestrator</code> triages every turn and picks a route before any
+                handoff — not keyword matching. The chosen route drives
+                <code>handoff_to_card_agent</code> / <code>handoff_to_mortgage_agent</code>.
+              </p>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">2</span>
+            <div>
+              <h4>Conversation context carried across handoff</h4>
+              <p>
+                The specialist inherits the known customer and full turn history, so the handoff
+                is seamless — the customer never repeats themselves.
+              </p>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num">3</span>
+            <div>
+              <h4>Wrong-specialist detection → re-handoff</h4>
+              <p>
+                If a turn is routed to the wrong agent, it is detected and re-handed to the
+                correct specialist instead of answering incorrectly.
+              </p>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num teal">4</span>
+            <div>
+              <h4>Tool timeouts → fallback</h4>
+              <p>
+                A slow or failed tool call (e.g. <code>get_available_meeting_times</code>) retries
+                or returns a safe response rather than dropping the turn.
+              </p>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num teal">5</span>
+            <div>
+              <h4>Keyless backend auth on tool calls</h4>
+              <p>
+                Backend tools authenticate with <code>DefaultAzureCredential</code> — no secrets
+                live in prompts or the model context.
+              </p>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num teal">6</span>
+            <div>
+              <h4>Tracing / observability hook</h4>
+              <p>
+                Every turn, handoff and tool call emits OpenTelemetry spans to
+                <b>Azure AI Foundry Observability</b> — see the companion
+                <code>foundry-engineering-replay.html</code> trace.
+              </p>
+            </div>
+          </div>
+          <div class="legend-item">
+            <span class="legend-num teal">7</span>
+            <div>
+              <h4>Independent versioning</h4>
+              <p>
+                The orchestrator prompt, the specialist prompts and the tool contracts are
+                versioned and deployed separately — a specialist fix ships without redeploying
+                the orchestrator.
+              </p>
             </div>
           </div>
         </div>
