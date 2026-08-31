@@ -1,0 +1,1388 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bank Alfa — Foundry Engineering Replay</title>
+    <script>
+      (() => {
+        // Default to the light Bank Alfa web look, matching agent-orchestration.html.
+        const param = new URLSearchParams(window.location.search).get("scoutTheme");
+        document.documentElement.setAttribute("data-theme", param || "light");
+      })();
+    </script>
+    <style>
+      :root {
+        color-scheme: light;
+        /* Aligned with the Bank Alfa web app palette (web/src/styles.css). */
+        --cp-bg: #f4f6f5;
+        --cp-bg-elevated: #fbfcfc;
+        --cp-surface: #ffffff;
+        --cp-surface-soft: #eef1f0;
+        --cp-border: #d5dcda;
+        --cp-border-strong: #7d8a89;
+        --cp-text: #172126;
+        --cp-text-muted: #52605f;
+        --cp-text-soft: #7d8a89;
+        --cp-accent: #c9343a;
+        --cp-accent-hover: #b02e33;
+        --cp-accent-soft: rgba(201, 52, 58, 0.08);
+        --cp-accent-fg: #ffffff;
+        --cp-success: #087f78;
+        --cp-success-soft: rgba(8, 127, 120, 0.1);
+        --cp-danger: #b42318;
+        --cp-danger-soft: rgba(180, 35, 24, 0.1);
+        --cp-warn: #b7791f;
+        --cp-warn-soft: rgba(183, 121, 31, 0.12);
+        --cp-link: #087f78;
+        --cp-shadow: 0 16px 40px rgba(23, 33, 38, 0.12);
+        --cp-highlight: rgba(201, 52, 58, 0.1);
+        --mono: Consolas, "Courier New", Courier, monospace;
+      }
+      html[data-theme="dark"] {
+        color-scheme: dark;
+        --cp-bg: #10191a;
+        --cp-bg-elevated: #16211f;
+        --cp-surface: #182a2a;
+        --cp-surface-soft: #1f302f;
+        --cp-border: #2c3d3b;
+        --cp-border-strong: #4a5c5a;
+        --cp-text: #eef2f1;
+        --cp-text-muted: #a7b6b4;
+        --cp-text-soft: #849694;
+        --cp-accent: #e2565b;
+        --cp-accent-hover: #ef6a6e;
+        --cp-accent-soft: rgba(226, 86, 91, 0.16);
+        --cp-accent-fg: #10191a;
+        --cp-success: #4bbdb4;
+        --cp-success-soft: rgba(75, 189, 180, 0.16);
+        --cp-danger: #f2a29a;
+        --cp-danger-soft: rgba(242, 162, 154, 0.16);
+        --cp-warn: #e2c07a;
+        --cp-warn-soft: rgba(226, 192, 122, 0.16);
+        --cp-link: #4bbdb4;
+        --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.4);
+        --cp-highlight: rgba(226, 86, 91, 0.14);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--cp-bg);
+        color: var(--cp-text);
+        font-family: "Space Grotesk", "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 40px 28px 56px;
+      }
+
+      header.hero {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 22px;
+      }
+      .hero-title {
+        margin: 0;
+        font-size: 1.85rem;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+      .hero-sub {
+        margin: 6px 0 0;
+        color: var(--cp-text-muted);
+        font-size: 0.98rem;
+        max-width: 680px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 13px;
+        border-radius: 999px;
+        border: 1px solid var(--cp-border);
+        background: var(--cp-surface);
+        color: var(--cp-text-muted);
+        font-size: 0.82rem;
+        font-weight: 550;
+        white-space: nowrap;
+      }
+      .badge .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--cp-accent);
+      }
+
+      /* Tab switcher */
+      .tabs {
+        display: flex;
+        gap: 6px;
+        border: 1px solid var(--cp-border);
+        background: var(--cp-surface);
+        padding: 5px;
+        border-radius: 12px;
+        margin-bottom: 22px;
+        width: fit-content;
+        box-shadow: 0 0 2px rgba(0, 0, 0, 0.06);
+      }
+      .tab {
+        font: inherit;
+        font-weight: 570;
+        cursor: pointer;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--cp-text-muted);
+        padding: 9px 18px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      }
+      .tab:hover {
+        background: var(--cp-surface-soft);
+        color: var(--cp-text);
+      }
+      .tab[aria-selected="true"] {
+        background: var(--cp-accent);
+        border-color: var(--cp-accent);
+        color: var(--cp-accent-fg);
+      }
+      .tab .tnum {
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        opacity: 0.7;
+      }
+
+      .panel {
+        display: none;
+        animation: fade 0.2s ease;
+      }
+      .panel.active {
+        display: block;
+      }
+      @keyframes fade {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .card {
+        background: var(--cp-bg-elevated);
+        border: 1px solid var(--cp-border);
+        border-radius: 16px;
+        padding: 22px 24px;
+        box-shadow: 0 0 2px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.14);
+      }
+      .section-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+      .section-title {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 640;
+      }
+      .section-sub {
+        margin: 2px 0 18px;
+        color: var(--cp-text-muted);
+        font-size: 0.9rem;
+      }
+      .kicker {
+        display: inline-block;
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 650;
+        color: var(--cp-accent);
+        background: var(--cp-accent-soft);
+        padding: 4px 10px;
+        border-radius: 999px;
+      }
+
+      .meta-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+      .mchip {
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        padding: 5px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--cp-border);
+        background: var(--cp-surface);
+        color: var(--cp-text-muted);
+      }
+      .mchip b {
+        color: var(--cp-text);
+        font-weight: 620;
+      }
+
+      /* ---- Trace waterfall ---- */
+      .trace-layout {
+        display: grid;
+        grid-template-columns: 1.55fr 1fr;
+        gap: 20px;
+      }
+      .waterfall {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .wf-head {
+        display: grid;
+        grid-template-columns: 1fr 84px;
+        font-size: 0.72rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--cp-text-soft);
+        font-weight: 650;
+        padding: 0 8px 6px;
+        border-bottom: 1px solid var(--cp-border);
+        margin-bottom: 4px;
+      }
+      .span-row {
+        display: grid;
+        grid-template-columns: 1fr 84px;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 8px;
+        border: 1px solid transparent;
+        border-radius: 9px;
+        cursor: pointer;
+        transition: background 0.12s ease, border-color 0.12s ease;
+      }
+      .span-row:hover {
+        background: var(--cp-surface-soft);
+      }
+      .span-row.active {
+        background: var(--cp-surface);
+        border-color: var(--cp-success);
+        box-shadow: 0 0 0 2px var(--cp-success-soft);
+      }
+      .span-left {
+        min-width: 0;
+      }
+      .span-name {
+        font-family: var(--mono);
+        font-size: 0.82rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .span-name .badge-status {
+        margin-left: 6px;
+      }
+      .span-svc {
+        font-size: 0.72rem;
+        color: var(--cp-text-soft);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .span-bar-track {
+        margin-top: 5px;
+        height: 7px;
+        background: var(--cp-surface-soft);
+        border-radius: 999px;
+        position: relative;
+        overflow: hidden;
+      }
+      .span-bar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        border-radius: 999px;
+        background: var(--cp-success);
+      }
+      .span-bar.kind-llm {
+        background: #4062bb;
+      }
+      .span-bar.kind-tool {
+        background: var(--cp-success);
+      }
+      .span-bar.kind-guard {
+        background: var(--cp-warn);
+      }
+      .span-bar.kind-handoff {
+        background: var(--cp-accent);
+      }
+      .span-bar.kind-root {
+        background: var(--cp-border-strong);
+      }
+      .span-bar.kind-tts {
+        background: #7a5bb0;
+      }
+      .span-dur {
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--cp-text-muted);
+        text-align: right;
+      }
+
+      .badge-status {
+        display: inline-flex;
+        align-items: center;
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        padding: 1px 7px;
+        border-radius: 999px;
+      }
+      .st-ok {
+        background: var(--cp-success-soft);
+        color: var(--cp-success);
+      }
+      .st-granted {
+        background: var(--cp-success-soft);
+        color: var(--cp-success);
+      }
+      .st-warn {
+        background: var(--cp-warn-soft);
+        color: var(--cp-warn);
+      }
+      .st-fail {
+        background: var(--cp-danger-soft);
+        color: var(--cp-danger);
+      }
+      .st-info {
+        background: var(--cp-surface-soft);
+        color: var(--cp-text-muted);
+      }
+
+      /* Attributes panel */
+      .attrs {
+        border: 1px solid var(--cp-border);
+        background: var(--cp-surface);
+        border-radius: 12px;
+        padding: 16px 16px 18px;
+        position: sticky;
+        top: 16px;
+        align-self: start;
+      }
+      .attrs-title {
+        margin: 0;
+        font-family: var(--mono);
+        font-size: 0.9rem;
+        font-weight: 700;
+        word-break: break-all;
+      }
+      .attrs-svc {
+        margin: 3px 0 14px;
+        font-size: 0.78rem;
+        color: var(--cp-text-soft);
+      }
+      .attr-list {
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+      .attr {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2px;
+      }
+      .attr-k {
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        color: var(--cp-accent);
+        font-weight: 600;
+      }
+      .attr-v {
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        color: var(--cp-text);
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: var(--cp-surface-soft);
+        border: 1px solid var(--cp-border);
+        border-radius: 7px;
+        padding: 6px 8px;
+      }
+
+      /* ---- Evaluation ---- */
+      .grid-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+      .eval-card {
+        border: 1px solid var(--cp-border);
+        background: var(--cp-surface);
+        border-radius: 12px;
+        padding: 15px 16px;
+      }
+      .eval-name {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--cp-text-muted);
+        margin: 0 0 8px;
+      }
+      .eval-score {
+        font-size: 1.7rem;
+        font-weight: 680;
+        letter-spacing: -0.02em;
+        margin: 0;
+      }
+      .eval-score .unit {
+        font-size: 0.9rem;
+        font-weight: 550;
+        color: var(--cp-text-soft);
+      }
+      .eval-bar-track {
+        height: 8px;
+        background: var(--cp-surface-soft);
+        border-radius: 999px;
+        margin-top: 10px;
+        overflow: hidden;
+      }
+      .eval-bar {
+        height: 100%;
+        border-radius: 999px;
+        background: var(--cp-success);
+      }
+      .eval-foot {
+        margin: 8px 0 0;
+        font-size: 0.74rem;
+        color: var(--cp-text-soft);
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.74rem;
+        font-weight: 650;
+        padding: 3px 9px;
+        border-radius: 999px;
+      }
+      .pill.pass {
+        background: var(--cp-success-soft);
+        color: var(--cp-success);
+      }
+      .pill.warn {
+        background: var(--cp-warn-soft);
+        color: var(--cp-warn);
+      }
+      .safety-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .safety-item {
+        flex: 1 1 180px;
+        border: 1px solid var(--cp-border);
+        background: var(--cp-surface);
+        border-radius: 10px;
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .safety-item .lbl {
+        font-size: 0.84rem;
+        font-weight: 560;
+      }
+
+      table.data {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+      table.data th {
+        text-align: left;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--cp-text-soft);
+        font-weight: 650;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--cp-border);
+      }
+      table.data td {
+        padding: 9px 10px;
+        border-bottom: 1px solid var(--cp-border);
+        vertical-align: top;
+      }
+      table.data tr:last-child td {
+        border-bottom: none;
+      }
+      table.data code {
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        background: var(--cp-surface-soft);
+        padding: 1px 5px;
+        border-radius: 5px;
+      }
+      .op-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 22px;
+      }
+      .op-metric .v {
+        font-size: 1.4rem;
+        font-weight: 660;
+        letter-spacing: -0.01em;
+      }
+      .op-metric .k {
+        font-size: 0.74rem;
+        color: var(--cp-text-soft);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      /* ---- Deployment ---- */
+      .status-dot {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-weight: 560;
+      }
+      .status-dot::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--cp-success);
+      }
+      .traffic {
+        display: grid;
+        grid-template-columns: 130px 1fr 70px;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--cp-border);
+      }
+      .traffic:last-of-type {
+        border-bottom: none;
+      }
+      .ver-tag {
+        font-family: var(--mono);
+        font-weight: 700;
+        font-size: 0.92rem;
+      }
+      .ver-role {
+        font-size: 0.74rem;
+        color: var(--cp-text-soft);
+      }
+      .split-track {
+        height: 12px;
+        background: var(--cp-surface-soft);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .split-fill {
+        height: 100%;
+        border-radius: 999px;
+        transition: width 0.4s ease;
+      }
+      .split-fill.prod {
+        background: var(--cp-success);
+      }
+      .split-fill.canary {
+        background: var(--cp-warn);
+      }
+      .split-pct {
+        font-family: var(--mono);
+        font-weight: 650;
+        text-align: right;
+      }
+      button.btn {
+        font: inherit;
+        font-weight: 560;
+        cursor: pointer;
+        border-radius: 0.55rem;
+        border: 1px solid var(--cp-border-strong);
+        background: var(--cp-surface);
+        color: var(--cp-text);
+        padding: 8px 14px;
+        transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+      }
+      button.btn:hover {
+        background: var(--cp-surface-soft);
+        border-color: var(--cp-text-muted);
+      }
+      button.btn:active {
+        transform: translateY(1px);
+      }
+      button.btn.primary {
+        background: var(--cp-accent);
+        border-color: var(--cp-accent);
+        color: var(--cp-accent-fg);
+      }
+      button.btn.primary:hover {
+        background: var(--cp-accent-hover);
+        border-color: var(--cp-accent-hover);
+      }
+      .deploy-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .deploy-note {
+        font-size: 0.82rem;
+        color: var(--cp-text-soft);
+        min-height: 1.2em;
+      }
+
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      /* Honesty footer */
+      .honesty {
+        margin-top: 22px;
+        padding: 12px 16px;
+        border: 1px dashed var(--cp-border-strong);
+        border-radius: 10px;
+        background: var(--cp-surface);
+        color: var(--cp-text-soft);
+        font-size: 0.8rem;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .honesty .i {
+        color: var(--cp-accent);
+        font-weight: 700;
+      }
+
+      @media (max-width: 820px) {
+        .trace-layout {
+          grid-template-columns: 1fr;
+        }
+        .attrs {
+          position: static;
+        }
+      }
+      @media print {
+        .tabs {
+          display: none;
+        }
+        .panel {
+          display: block !important;
+          page-break-after: always;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div>
+          <h1 class="hero-title">Bank Alfa — Foundry Engineering Replay</h1>
+          <p class="hero-sub">
+            The same voice mortgage assistant, seen as a governed application on
+            <b>Microsoft Foundry</b>: a distributed <b>trace</b> of one real interaction, an
+            offline <b>evaluation</b> run, and a versioned <b>deployment</b> with blue-green
+            promotion. This is the engineering surface behind the demo — not a chatbot.
+          </p>
+        </div>
+        <span class="badge"><span class="dot"></span>Azure AI Foundry · Observability · Evaluations · Deployments</span>
+      </header>
+
+      <div class="tabs" role="tablist" aria-label="Foundry engineering replay">
+        <button class="tab" role="tab" aria-selected="true" data-tab="trace">
+          <span class="tnum">01</span> Trace
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="eval">
+          <span class="tnum">02</span> Evaluation
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="deploy">
+          <span class="tnum">03</span> Deployment
+        </button>
+      </div>
+
+      <!-- ============================ TAB 1 — TRACE ============================ -->
+      <section class="panel active" id="panel-trace" role="tabpanel">
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <span class="kicker">Foundry Observability · OpenTelemetry</span>
+              <h2 class="section-title" style="margin-top: 10px">
+                Trace — "Book an advisor meeting, Tuesday 22 Sep 09:00"
+              </h2>
+            </div>
+          </div>
+          <p class="section-sub">
+            One end-to-end voice turn: the orchestrator classifies intent, hands off to the
+            mortgage specialist, fetches availability, passes a consent guard, and books the
+            slot. Click any span to inspect its OpenTelemetry attributes.
+          </p>
+
+          <div class="meta-chips">
+            <span class="mchip">correlation_id <b>0af7651916cd43dd8448eb211c80319c</b></span>
+            <span class="mchip">endpoint <b>foundry-mortgage.cognitiveservices.azure.com</b></span>
+            <span class="mchip">total <b>4.12 s</b></span>
+            <span class="mchip">handoffs <b>1</b></span>
+            <span class="mchip">tool calls <b>2</b></span>
+          </div>
+
+          <div class="trace-layout">
+            <div>
+              <div class="wf-head">
+                <span>Span</span>
+                <span style="text-align: right">Duration</span>
+              </div>
+              <div class="waterfall" id="waterfall"></div>
+            </div>
+            <aside class="attrs" id="attrs">
+              <!-- filled by JS -->
+            </aside>
+          </div>
+
+          <div class="honesty">
+            <span class="i">ⓘ</span>
+            <span
+              >Illustrative engineering replay — representative values modeled on this
+              application's real Foundry configuration (Voice Live, Content Understanding, Agent
+              handoff). Live telemetry available via Azure AI Foundry Observability.</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================= TAB 2 — EVALUATION ========================= -->
+      <section class="panel" id="panel-eval" role="tabpanel">
+        <div class="stack">
+          <div class="card">
+            <div class="section-head">
+              <div>
+                <span class="kicker">Foundry Evaluations</span>
+                <h2 class="section-title" style="margin-top: 10px">
+                  Evaluation run — 24 transcripts
+                </h2>
+              </div>
+              <span class="pill pass">✓ 22 passed · 2 warnings</span>
+            </div>
+            <p class="section-sub">
+              Offline evaluation over 24 recorded voice sessions covering card, income,
+              borrowing-estimate and booking journeys. AI-assisted graders score each turn on
+              intent, tool use and groundedness; content-safety runs on every response.
+            </p>
+
+            <div class="grid-cards" id="eval-cards"></div>
+          </div>
+
+          <div class="card">
+            <h3 class="section-title" style="font-size: 1rem">Content safety</h3>
+            <p class="section-sub">Azure AI Content Safety graders · 0 responses flagged.</p>
+            <div class="safety-row" id="safety-row"></div>
+
+            <h3 class="section-title" style="font-size: 1rem; margin-top: 6px">
+              Operational metrics
+            </h3>
+            <p class="section-sub">Latency &amp; cost across the 24-run batch.</p>
+            <div class="op-metrics">
+              <div class="op-metric"><div class="v">3.9 s</div><div class="k">p50 latency</div></div>
+              <div class="op-metric"><div class="v">6.4 s</div><div class="k">p95 latency</div></div>
+              <div class="op-metric"><div class="v">1,180</div><div class="k">avg tokens / run</div></div>
+              <div class="op-metric"><div class="v">$0.021</div><div class="k">est. cost / run</div></div>
+              <div class="op-metric"><div class="v">2</div><div class="k">handoffs / run (avg 1.1)</div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="section-title" style="font-size: 1rem">Per-case results</h3>
+            <p class="section-sub">
+              A slice of the batch, including two imperfect cases that recovered — this is a
+              real evaluation run, not a vanity board.
+            </p>
+            <table class="data" id="case-table"></table>
+
+            <div class="honesty">
+              <span class="i">ⓘ</span>
+              <span
+                >Illustrative engineering replay — representative values modeled on this
+                application's real Foundry configuration (Voice Live, Content Understanding,
+                Agent handoff). Live telemetry available via Azure AI Foundry Observability.</span
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================= TAB 3 — DEPLOYMENT ========================= -->
+      <section class="panel" id="panel-deploy" role="tabpanel">
+        <div class="stack">
+          <div class="card">
+            <div class="section-head">
+              <div>
+                <span class="kicker">Foundry Deployments</span>
+                <h2 class="section-title" style="margin-top: 10px">Deployments</h2>
+              </div>
+            </div>
+            <p class="section-sub">
+              The voice orchestrator and the payslip analyzer are deployed as independent
+              Foundry resources on the same project endpoint.
+            </p>
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>Deployment</th>
+                  <th>Model / analyzer</th>
+                  <th>Endpoint</th>
+                  <th>Capacity</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>mortgage-voice-orchestrator</code></td>
+                  <td><code>gpt-realtime-1.5</code><br /><span class="ver-role">Voice Live · api 2026-07-15</span></td>
+                  <td><code>foundry-mortgage.cognitiveservices.azure.com</code></td>
+                  <td>60K TPM</td>
+                  <td><span class="status-dot">Succeeded</span></td>
+                  <td>2026-08-18</td>
+                </tr>
+                <tr>
+                  <td><code>bankalfa-payslip-analyzer</code></td>
+                  <td><code>bankalfa_payslip</code><br /><span class="ver-role">Content Understanding · api 2025-11-01</span></td>
+                  <td><code>foundry-mortgage.cognitiveservices.azure.com</code></td>
+                  <td>—</td>
+                  <td><span class="status-dot">Succeeded</span></td>
+                  <td>2026-08-18</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="section-head">
+              <div>
+                <h3 class="section-title" style="font-size: 1.05rem">
+                  Version history — blue-green rollout
+                </h3>
+              </div>
+              <span class="pill pass" id="rollout-state">v1.4 Production · v1.5 Canary</span>
+            </div>
+            <p class="section-sub">
+              <code>mortgage-voice-orchestrator</code> runs a canary split. Promote shifts all
+              traffic to the canary; rollback restores the previous production version.
+            </p>
+
+            <div id="traffic-rows"></div>
+
+            <div class="deploy-actions">
+              <button class="btn primary" id="promote">▲ Promote v1.5 to Production</button>
+              <button class="btn" id="rollback">↩ Rollback to v1.4</button>
+              <span class="deploy-note" id="deploy-note"></span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="section-title" style="font-size: 1rem">Independent versioning</h3>
+            <p class="section-sub">
+              The orchestrator prompt, the specialist prompts and the tool contracts are
+              versioned and deployed <b>separately</b> — a specialist prompt fix ships without
+              redeploying the orchestrator or the backend tools.
+            </p>
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>Component</th>
+                  <th>Artifact</th>
+                  <th>Version</th>
+                  <th>Last change</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Orchestrator prompt</td>
+                  <td><code>voice_orchestrator</code> · system prompt + handoff tools</td>
+                  <td><code>v1.5</code></td>
+                  <td>Tighten intent triage for booking vs. estimate</td>
+                </tr>
+                <tr>
+                  <td>Specialist prompts</td>
+                  <td><code>CardAgent</code> / <code>MortgageAgent</code></td>
+                  <td><code>v1.2</code> / <code>v1.7</code></td>
+                  <td>Mortgage: clearer "advisor makes final decision" wording</td>
+                </tr>
+                <tr>
+                  <td>Tool contracts</td>
+                  <td>
+                    <code>get_available_meeting_times</code>, <code>book_meeting</code>,
+                    <code>run_credit_check</code> …
+                  </td>
+                  <td><code>v3</code></td>
+                  <td>Stable JSON schema · keyless backend auth</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="honesty">
+              <span class="i">ⓘ</span>
+              <span
+                >Illustrative engineering replay — representative values modeled on this
+                application's real Foundry configuration (Voice Live, Content Understanding,
+                Agent handoff). Live telemetry available via Azure AI Foundry Observability.</span
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      // ======================= Tab switching ======================= //
+      const tabs = Array.from(document.querySelectorAll(".tab"));
+      const panels = {
+        trace: document.getElementById("panel-trace"),
+        eval: document.getElementById("panel-eval"),
+        deploy: document.getElementById("panel-deploy"),
+      };
+      function selectTab(name) {
+        tabs.forEach((t) => t.setAttribute("aria-selected", String(t.dataset.tab === name)));
+        Object.entries(panels).forEach(([k, el]) => el.classList.toggle("active", k === name));
+      }
+      tabs.forEach((t) => t.addEventListener("click", () => selectTab(t.dataset.tab)));
+
+      // ======================= TAB 1 · Trace data ======================= //
+      // depth = indent level; kind drives the bar colour; offset/dur in ms.
+      const SPANS = [
+        {
+          id: "voice.session",
+          name: "voice.session",
+          depth: 0,
+          kind: "root",
+          svc: "Voice Live · gpt-realtime-1.5",
+          offset: 0,
+          dur: 4120,
+          status: { label: "ok", cls: "st-ok" },
+          attrs: {
+            "gen_ai.system": "az.ai.foundry",
+            "gen_ai.request.model": "gpt-realtime-1.5",
+            "voice.session.voice": "en-US-AvaNeural",
+            "gen_ai.usage.input_tokens": "742",
+            "gen_ai.usage.output_tokens": "196",
+            correlation_id: "0af7651916cd43dd8448eb211c80319c",
+            "span.status": "OK",
+          },
+        },
+        {
+          id: "orchestrator.turn",
+          name: "orchestrator.turn",
+          depth: 1,
+          kind: "llm",
+          svc: "voice_orchestrator · intent triage",
+          offset: 40,
+          dur: 380,
+          status: { label: "ok", cls: "st-ok" },
+          attrs: {
+            "gen_ai.system": "az.ai.foundry",
+            "agent.name": "voice_orchestrator",
+            "agent.intent": "booking",
+            "agent.intent.confidence": "0.97",
+            "agent.route": "handoff_to_mortgage_agent",
+            correlation_id: "0af7651916cd43dd8448eb211c80319c",
+            "span.status": "OK",
+          },
+        },
+        {
+          id: "orchestrator.llm",
+          name: "llm.completion",
+          depth: 2,
+          kind: "llm",
+          svc: "gpt-realtime-1.5",
+          offset: 70,
+          dur: 300,
+          status: { label: "ok", cls: "st-ok" },
+          attrs: {
+            "gen_ai.system": "az.ai.foundry",
+            "gen_ai.request.model": "gpt-realtime-1.5",
+            "gen_ai.operation.name": "chat",
+            "gen_ai.usage.input_tokens": "742",
+            "gen_ai.usage.output_tokens": "38",
+            "gen_ai.response.finish_reason": "tool_calls",
+            correlation_id: "0af7651916cd43dd8448eb211c80319c",
+            "span.status": "OK",
+          },
+        },
+        {
+          id: "handoff",
+          name: "handoff_to_mortgage_agent",
+          depth: 1,
+          kind: "handoff",
+          svc: "handoff tool",
+          offset: 420,
+          dur: 60,
+          status: { label: "ok", cls: "st-ok" },
+          attrs: {
+            "gen_ai.system": "az.ai.foundry",
+            "tool.name": "handoff_to_mortgage_agent",
+            "tool.arguments": '{\n  "reason": "customer wants to book an advisor meeting"\n}',
+            "tool.result": '{\n  "active_agent": "MortgageAgent",\n  "context_carried": true\n}',
+            "handoff.from": "voice_orchestrator",
+            "handoff.to": "MortgageAgent",
+            correlation_id: "0af7651916cd43dd8448eb211c80319c",
+            "span.status": "OK",
+          },
+        },
+        {
+          id: "mortgage.turn",
+          name: "mortgage_agent.turn",
+          depth: 1,
+          kind: "root",
+          svc: "MortgageAgent",
+          offset: 480,
+          dur: 2860,
+          status: { label: "ok", cls: "st-ok" },
+          attrs: {
+            "gen_ai.system": "az.ai.foundry",
+            "agent.name": "MortgageAgent",
+            "agent.goal": "offer availability and book advisor meeting",
+            correlation_id: "0af7651916cd43dd8448eb211c80319c",
+            "span.status": "OK",
+          },
+        },
+        {
+          id: "mortgage.llm1",
+          name: "llm.completion",
+          depth: 2,
+          kind: "llm",
+          svc: "gpt-realtime-1.5",
+          offset: 500,
+          dur: 520,
+          status: { label: "ok", cls: "st-ok" },
+          attrs: {
+            "gen_ai.system": "az.ai.foundry",
+            "gen_ai.request.model": "gpt-realtime-1.5",
+            "gen_ai.operation.name": "chat",
+            "gen_ai.usage.input_tokens": "910",
+            "gen_ai.usage.output_tokens": "44",
+            "gen_ai.response.finish_reason": "tool_calls",
+            correlation_id: "0af7651916cd43dd8448eb211c80319c",
+            "span.status": "OK",
+          },
+        },
+        {
+          id: "tool.slots",
+          name: "tool.get_available_meeting_times",
+          depth: 2,
+          kind: "tool",
+          svc: "Advisor calendar",
+          offset: 1040,
+          dur: 210,
+          status: { label: "ok", cls: "st-ok" },
+          attrs: {
+            "gen_ai.system": "az.ai.foundry",
+            "tool.name": "get_available_meeting_times",
+            "tool.arguments": '{\n  "earliest_date": "2026-09-22",\n  "preferred_time": "any"\n}',
+            "tool.result":
+              '{\n  "count": 6,\n  "slots": [\n    "slot-2026-09-22-0900",\n    "slot-2026-09-22-1030",\n    "slot-2026-09-22-1330",\n    "slot-2026-09-23-0900",\n    "slot-2026-09-23-1500",\n    "slot-2026-09-24-1100"\n  ]\n}',
+            "backend.auth": "DefaultAzureCredential (keyless)",
+            correlation_id: "0af7651916cd43dd8448eb211c80319c",
+            "span.status": "OK",
+          },
+        },
+        {
+          id: "mortgage.llm2",
+          name: "llm.completion",
+          depth: 2,
+          kind: "llm",
+          svc: "gpt-realtime-1.5",
+          offset: 1260,
+          dur: 480,
+          status: { label: "ok", cls: "st-ok" },
+          attrs: {
+            "gen_ai.system": "az.ai.foundry",
+            "gen_ai.request.model": "gpt-realtime-1.5",
+            "gen_ai.operation.name": "chat",
+            "gen_ai.usage.input_tokens": "986",
+            "gen_ai.usage.output_tokens": "31",
+            "gen_ai.response.finish_reason": "tool_calls",
+            correlation_id: "0af7651916cd43dd8448eb211c80319c",
+            "span.status": "OK",
+          },
+        },
+        {
+          id: "consent.guard",
+          name: "consent.guard",
+          depth: 2,
+          kind: "guard",
+          svc: "ConsentEngine",
+          offset: 1745,
+          dur: 15,
+          status: { label: "granted", cls: "st-granted" },
+          attrs: {
+            "gen_ai.system": "az.ai.foundry",
+            "guard.name": "consent.guard",
+            "guard.scope": "booking",
+            "consent.status": "granted",
+            "consent.requested_by": "request_customer_consent",
+            correlation_id: "0af7651916cd43dd8448eb211c80319c",
+            "span.status": "OK",
+          },
+        },
+        {
+          id: "tool.book",
+          name: "tool.book_meeting",
+          depth: 2,
+          kind: "tool",
+          svc: "Advisor calendar",
+          offset: 1760,
+          dur: 240,
+          status: { label: "ok", cls: "st-ok" },
+          attrs: {
+            "gen_ai.system": "az.ai.foundry",
+            "tool.name": "book_meeting",
+            "tool.arguments": '{\n  "slot_id": "slot-2026-09-22-0900"\n}',
+            "tool.result":
+              '{\n  "summary": "Booked Tue 22 Sep 09:00-09:45 Europe/Stockholm",\n  "booking_reference": "BKG-3F9A2C7D",\n  "purpose": "Mortgage advisory meeting"\n}',
+            "backend.auth": "DefaultAzureCredential (keyless)",
+            correlation_id: "0af7651916cd43dd8448eb211c80319c",
+            "span.status": "OK",
+          },
+        },
+        {
+          id: "tts",
+          name: "tts.synthesize",
+          depth: 1,
+          kind: "tts",
+          svc: "en-US-Ava:DragonHDLatestNeural",
+          offset: 3560,
+          dur: 520,
+          status: { label: "ok", cls: "st-ok" },
+          attrs: {
+            "gen_ai.system": "az.ai.foundry",
+            "tts.voice": "en-US-Ava:DragonHDLatestNeural",
+            "tts.text": "You're booked with an advisor on Tuesday 22 September at 9 o'clock.",
+            "tts.audio_ms": "3200",
+            correlation_id: "0af7651916cd43dd8448eb211c80319c",
+            "span.status": "OK",
+          },
+        },
+      ];
+
+      const TOTAL = 4120;
+      const waterfall = document.getElementById("waterfall");
+      const attrsEl = document.getElementById("attrs");
+
+      function esc(s) {
+        return String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+      }
+
+      SPANS.forEach((sp, i) => {
+        const row = document.createElement("div");
+        row.className = "span-row";
+        row.dataset.idx = i;
+        const leftPad = 4 + sp.depth * 16;
+        const barLeft = (sp.offset / TOTAL) * 100;
+        const barW = Math.max((sp.dur / TOTAL) * 100, 0.8);
+        row.innerHTML =
+          '<div class="span-left" style="padding-left:' +
+          leftPad +
+          'px">' +
+          '<div class="span-name">' +
+          esc(sp.name) +
+          '<span class="badge-status ' +
+          sp.status.cls +
+          '">' +
+          esc(sp.status.label) +
+          "</span></div>" +
+          '<div class="span-svc">' +
+          esc(sp.svc) +
+          "</div>" +
+          '<div class="span-bar-track"><div class="span-bar kind-' +
+          sp.kind +
+          '" style="left:' +
+          barLeft +
+          "%;width:" +
+          barW +
+          '%"></div></div>' +
+          "</div>" +
+          '<div class="span-dur">' +
+          sp.dur +
+          " ms</div>";
+        row.addEventListener("click", () => selectSpan(i));
+        waterfall.appendChild(row);
+      });
+
+      function selectSpan(i) {
+        Array.from(waterfall.children).forEach((r, j) =>
+          r.classList.toggle("active", j === i)
+        );
+        const sp = SPANS[i];
+        let rows = "";
+        for (const [k, v] of Object.entries(sp.attrs)) {
+          rows +=
+            '<div class="attr"><div class="attr-k">' +
+            esc(k) +
+            '</div><div class="attr-v">' +
+            esc(v) +
+            "</div></div>";
+        }
+        attrsEl.innerHTML =
+          '<p class="attrs-title">' +
+          esc(sp.name) +
+          "</p>" +
+          '<p class="attrs-svc">' +
+          esc(sp.svc) +
+          " · " +
+          sp.dur +
+          " ms</p>" +
+          '<div class="attr-list">' +
+          rows +
+          "</div>";
+      }
+      selectSpan(0);
+
+      // ======================= TAB 2 · Evaluation ======================= //
+      const EVALS = [
+        { name: "Intent resolution", score: 0.96, note: "24 / 24 routed to the right journey" },
+        { name: "Task adherence", score: 0.95, note: "Stayed within advisor-not-decider policy" },
+        { name: "Tool-call accuracy", score: 0.99, note: "Correct agent + tool selected" },
+        { name: "Groundedness", score: 0.94, note: "Answers grounded in tool/backend results" },
+      ];
+      const evalCards = document.getElementById("eval-cards");
+      EVALS.forEach((e) => {
+        const pct = Math.round(e.score * 100);
+        const card = document.createElement("div");
+        card.className = "eval-card";
+        card.innerHTML =
+          '<p class="eval-name">' +
+          esc(e.name) +
+          "</p>" +
+          '<p class="eval-score">' +
+          e.score.toFixed(2) +
+          ' <span class="unit">/ 1.00</span></p>' +
+          '<div class="eval-bar-track"><div class="eval-bar" style="width:' +
+          pct +
+          '%"></div></div>' +
+          '<p class="eval-foot">' +
+          esc(e.note) +
+          "</p>";
+        evalCards.appendChild(card);
+      });
+
+      const SAFETY = ["Violence", "Hate & Unfairness", "Self-harm", "Sexual"];
+      const safetyRow = document.getElementById("safety-row");
+      SAFETY.forEach((s) => {
+        const item = document.createElement("div");
+        item.className = "safety-item";
+        item.innerHTML =
+          '<span class="lbl">' + esc(s) + '</span><span class="pill pass">✓ Passed</span>';
+        safetyRow.appendChild(item);
+      });
+
+      const CASES = [
+        ["C-01", "Block a lost card + order replacement", "CardAgent", "block_card_and_order_replacement", "pass", "Pass"],
+        ["C-02", "Check income status from payslip", "MortgageAgent", "check_income_status", "pass", "Pass"],
+        ["C-03", "Preliminary borrowing estimate", "MortgageAgent", "calculate_borrowing_capacity", "pass", "Pass"],
+        ["C-04", "Book advisor meeting (22 Sep 09:00)", "MortgageAgent", "book_meeting", "pass", "Pass"],
+        ["C-05", "Card query first routed to MortgageAgent", "CardAgent (recovered)", "re-handoff → get_customer_cards", "warn", "Warn"],
+        ["C-06", "Availability lookup timed out once", "MortgageAgent", "get_available_meeting_times (retry)", "warn", "Warn"],
+      ];
+      const caseTable = document.getElementById("case-table");
+      caseTable.innerHTML =
+        "<thead><tr><th>Case</th><th>Scenario</th><th>Agent</th><th>Tool</th><th>Result</th></tr></thead>";
+      const tbody = document.createElement("tbody");
+      CASES.forEach((c) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td><code>" +
+          c[0] +
+          "</code></td><td>" +
+          esc(c[1]) +
+          "</td><td>" +
+          esc(c[2]) +
+          "</td><td><code>" +
+          esc(c[3]) +
+          "</code></td><td><span class='pill " +
+          c[4] +
+          "'>" +
+          (c[4] === "pass" ? "✓ " : "▲ ") +
+          c[5] +
+          "</span></td>";
+        tbody.appendChild(tr);
+      });
+      caseTable.appendChild(tbody);
+
+      // ======================= TAB 3 · Deployment ======================= //
+      const trafficRows = document.getElementById("traffic-rows");
+      const deployNote = document.getElementById("deploy-note");
+      const rolloutState = document.getElementById("rollout-state");
+      let split = { prod: { ver: "v1.4", pct: 100 }, canary: { ver: "v1.5", pct: 10 } };
+      // Note: canary receives 10% of live traffic while prod still serves; the bar widths
+      // are illustrative of the mirrored/blue-green split, not additive percentages.
+
+      function renderTraffic() {
+        trafficRows.innerHTML = "";
+        const make = (role, cls, ver, pct, roleLabel) => {
+          const div = document.createElement("div");
+          div.className = "traffic";
+          div.innerHTML =
+            '<div><span class="ver-tag">' +
+            ver +
+            '</span><br /><span class="ver-role">' +
+            roleLabel +
+            "</span></div>" +
+            '<div class="split-track"><div class="split-fill ' +
+            cls +
+            '" style="width:' +
+            pct +
+            '%"></div></div>' +
+            '<div class="split-pct">' +
+            pct +
+            "%</div>";
+          trafficRows.appendChild(div);
+        };
+        make("prod", "prod", split.prod.ver, split.prod.pct, "Production");
+        make("canary", "canary", split.canary.ver, split.canary.pct, "Canary");
+        rolloutState.textContent =
+          split.prod.ver + " Production · " + split.canary.ver + " Canary";
+      }
+
+      document.getElementById("promote").addEventListener("click", () => {
+        split.prod = { ver: split.canary.ver, pct: 100 };
+        split.canary = { ver: "v1.6", pct: 0 };
+        renderTraffic();
+        deployNote.textContent =
+          "Promoted " + split.prod.ver + " to Production (100%). Next canary slot ready.";
+      });
+      document.getElementById("rollback").addEventListener("click", () => {
+        split.prod = { ver: "v1.4", pct: 100 };
+        split.canary = { ver: "v1.5", pct: 10 };
+        renderTraffic();
+        deployNote.textContent = "Rolled back to v1.4 Production. v1.5 returned to 10% canary.";
+      });
+      renderTraffic();
+    </script>
+  </body>
+</html>
